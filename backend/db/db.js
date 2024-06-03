@@ -1,9 +1,7 @@
 const { MongoClient } = require('mongodb');
-require('dotenv').config();
+const { MONGODB_URI } = require('../config/config'); 
 
-const uri = process.env.MONGODB_URI;
-
-const client = new MongoClient(uri, {});
+const client = new MongoClient(MONGODB_URI, {});
 
 async function connectDB() {
   try {
@@ -16,4 +14,4 @@ async function connectDB() {
   }
 }
 
-module.exports = { connectDB };
+module.exports = { connectDB, client };

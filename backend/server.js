@@ -1,37 +1,9 @@
-require('dotenv').config();
-const express = require('express');
-const cors = require('cors');
-const helmet = require('helmet');
-const { connectDB } = require('./db');
+const app = require('./middlewares/middlewares');
+const { connectDB } = require('./db/db');
+const userRoutes = require('./routes/userRoutes');
+const { PORT } = require('./config/config');
 
-const app = express();
-const PORT = process.env.PORT || 3000;
-
-// Middleware
-app.use(cors());
-app.use(helmet());
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
-
-let dbClient;
-
-app.get('/', (req, res) => {
-  res.send('Hello World!');
-});
-
-app.post('/submit-form', async (req, res) => {
-  const { name, email, message } = req.body;
-  console.log(`Name: ${name}, Email: ${email}, Message: ${message}`);
-
-  try {
-    const collection = dbClient.db('test').collection('testdb');
-    await collection.insertOne({ name, email, message });
-    res.send(`Form submitted! Name: ${name}, Email: ${email}, Message: ${message}`);
-  } catch (error) {
-    console.error('Error inserting document', error);
-    res.status(500).send('Error submitting form');
-  }
-});
+app.use('/', userRoutes);
 
 // Error handling middleware
 app.use((err, req, res, next) => {
@@ -41,7 +13,7 @@ app.use((err, req, res, next) => {
 
 (async () => {
   try {
-    dbClient = await connectDB();
+    await connectDB();
     app.listen(PORT, () => {
       console.log(`Server is running on port ${PORT}`);
     });

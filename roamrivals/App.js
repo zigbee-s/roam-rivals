@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { StyleSheet, Text, View, TextInput, ActivityIndicator, Button } from 'react-native';
 import axios from 'axios';
+import { v4 as uuidv4 } from 'uuid';
 
 export default function App() {
   const [name, setName] = useState('');
@@ -8,19 +9,32 @@ export default function App() {
   const [message, setMessage] = useState('');
   const [responseMessage, setResponseMessage] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [idempotencyKey, setIdempotencyKey] = useState(uuidv4());
+  const [authToken, setAuthToken] = useState('abcd'); // Replace with actual authentication token
 
   const submitForm = () => {
     setLoading(true);
-    axios.post('http://localhost:3000/submit-form', { name, email, message })
-      .then(response => {
-        console.log(response);
-        setResponseMessage(response.data);
-        setLoading(false);
-      })
-      .catch(error => {
-        console.error(error);
-        setLoading(false);
-      });
+    axios.post('http://localhost:3000/add-user', 
+      { name, email, message },
+      {
+        headers: {
+          'Idempotency-Key': idempotencyKey,
+          'Authorization': `Bearer ${authToken}`
+        }
+      }
+    )
+    .then(response => {
+      console.log(response);
+      setResponseMessage(response.data);
+      setLoading(false);
+      // Clear idempotency key after successful request to ensure new one is generated next time
+      setIdempotencyKey(uuidv4());
+    })
+    .catch(error => {
+      console.error(error);
+      setIdempotencyKey(uuidv4());
+      setLoading(false);
+    });
   };
 
   return (
