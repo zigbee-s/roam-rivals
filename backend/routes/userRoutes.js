@@ -6,6 +6,6 @@ const { idempotencyMiddleware } = require('../middlewares/idempotency');
 
 const router = express.Router();
 
-router.post('/add-user', idempotencyMiddleware, validateUserInput, addUser);
+router.post('/add-user',validateUserInput, idempotencyMiddleware, addUser);
 
 module.exports = router;

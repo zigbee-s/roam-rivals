@@ -1,19 +1,50 @@
-// controllers/userController.js
-const { client } = require('../db/db');
+const User = require('../models/userModel');
+const IdempotencyKey = require('../models/idempotencyKeyModel');
+const { delay } = require('../helpers/delayHelper');
 
-async function addUser(req, res) {
-  const { name, email, message } = req.body;
-  console.log(`Name: ${name}, Email: ${email}, Message: ${message}`);
+const userController = {};
+
+userController.addUser = async (req, res) => {
+  const idempotencyKeyEntry = req.idempotencyKeyEntry;
 
   try {
-    const collection = client.db('test').collection('users');
-    await collection.insertOne({ name, email, message });
-    console.log(`User added! Name: ${name}, Email: ${email}, Message: ${message}`);
-    res.send(`User added! Name: ${name}, Email: ${email}, Message: ${message}`);
-  } catch (error) {
-    console.error('Error adding user', error);
-    res.status(500).send('Error adding user');
-  }
-}
+    // Simulate a delay if needed
+    console.log("UserController triggered")
+    await delay(30000); // 60,000 milliseconds = 1 minute
+    
+    // Create a new user instance based on request data
+    const newUser = new User({
+      name: req.body.name,
+      email: req.body.email,
+      message: req.body.message
+    });
 
-module.exports = { addUser };
+    // Save the user to the database
+    await newUser.save();
+
+    // Prepare the response body
+    const responseBody = { message: 'User added successfully', user: newUser };
+
+    // Update the idempotency key entry with response data and status
+    await IdempotencyKey.findByIdAndUpdate(
+      idempotencyKeyEntry._id,
+      { responseBody, status: 'completed' },
+      { new: true }
+    );
+
+    res.status(200).json(responseBody);
+  } catch (error) {
+    const responseBody = { error: 'Internal Server Error', details: error.message };
+
+    await IdempotencyKey.findByIdAndUpdate(
+      idempotencyKeyEntry._id,
+      { responseBody, status: 'failed' },
+      { new: true }
+    );
+
+    console.error('Error adding user:', error);
+    res.status(500).json(responseBody);
+  }
+};
+
+module.exports = userController;
