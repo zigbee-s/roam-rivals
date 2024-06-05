@@ -10,7 +10,7 @@ userController.addUser = async (req, res) => {
   try {
     // Simulate a delay if needed
     console.log("UserController triggered")
-    await delay(30000); // 60,000 milliseconds = 1 minute
+    // await delay(30000); // 60,000 milliseconds = 1 minute
     
     // Create a new user instance based on request data
     const newUser = new User({
