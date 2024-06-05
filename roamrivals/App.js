@@ -25,7 +25,7 @@ export default function App() {
     )
     .then(response => {
       console.log(response);
-      setResponseMessage(response.data);
+      setResponseMessage(response.data.message || response.data);
       setLoading(false);
       // Clear idempotency key after successful request to ensure new one is generated next time
       setIdempotencyKey(uuidv4());
@@ -34,6 +34,12 @@ export default function App() {
       console.error(error);
       setIdempotencyKey(uuidv4());
       setLoading(false);
+      // Set response message to the error message, if any
+      if (error.response && error.response.data && error.response.data.error) {
+        setResponseMessage(error.response.data.error);
+      } else {
+        setResponseMessage('An error occurred. Please try again.');
+      }
     });
   };
 
@@ -60,7 +66,7 @@ export default function App() {
         multiline
       />
       <View style={styles.buttonContainer}>
-        <Button title="Submit" onPress={submitForm} disabled={loading} />
+        <Button title="Submit" onPress={submitForm}  />
       </View>
       {loading && <ActivityIndicator size="large" color="#0000ff" />}
       {responseMessage && (
