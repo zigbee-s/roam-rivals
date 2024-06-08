@@ -1,33 +1,70 @@
+// middlewares/userValidation.js
 const { body, validationResult } = require('express-validator');
-const User = require('../models/userModel'); // Import the User model
+const User = require('../models/userModel');
 const { SCHOOL_DOMAINS } = require('../config/config');
 
-
-
-const validateUserInput = [
-  body('name').trim().notEmpty().isString().withMessage('Name is required'),
-  body('email').trim().notEmpty().isEmail().withMessage('Valid email is required')
+// Validation for user sign-up
+const validateSignupInput = [
+  body('name')
+    .trim()
+    .notEmpty()
+    .isString()
+    .withMessage('Name is required'),
+  body('email')
+    .trim()
+    .notEmpty()
+    .isEmail()
+    .withMessage('Valid email is required')
     .custom(async (email) => {
-      // Check if the email domain is a school domain
       const emailDomain = email.split('@')[1];
       if (!SCHOOL_DOMAINS.includes(emailDomain)) {
-        return Promise.reject('Only school email addresses are allowed');
+        console.warn(`Signup validation failed: ${email} is not from an allowed domain`);
+        throw new Error('Only school email addresses are allowed');
       }
-
-      // Check if the email is already in use
       const user = await User.findOne({ email });
       if (user) {
-        return Promise.reject('E-mail already in use');
+        console.warn(`Signup validation failed: ${email} is already in use`);
+        throw new Error('E-mail already in use');
       }
     }),
-  body('message').trim().notEmpty().isString().withMessage('Message is required'),
+  body('password')
+    .trim()
+    .notEmpty()
+    .isLength({ min: 6 })
+    .withMessage('Password must be at least 6 characters long'),
   async (req, res, next) => {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
-      return res.status(400).json({ errors: errors.array() });
+      const errorDetails = errors.array().map(err => ({ field: err.param, message: err.msg }));
+      console.warn('Signup validation errors:', errorDetails);
+      return res.status(400).json({ errors: errorDetails });
     }
+    console.info(`Signup validation passed for email: ${req.body.email}`);
     next();
   }
 ];
 
-module.exports = { validateUserInput };
+// Validation for user login
+const validateLoginInput = [
+  body('email')
+    .trim()
+    .notEmpty()
+    .isEmail()
+    .withMessage('Valid email is required'),
+  body('password')
+    .trim()
+    .notEmpty()
+    .withMessage('Password is required'),
+  async (req, res, next) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      const errorDetails = errors.array().map(err => ({ field: err.param, message: err.msg }));
+      console.warn('Login validation errors:', errorDetails);
+      return res.status(400).json({ errors: errorDetails });
+    }
+    console.info(`Login validation passed for email: ${req.body.email}`);
+    next();
+  }
+];
+
+module.exports = { validateSignupInput, validateLoginInput };

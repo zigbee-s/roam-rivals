@@ -1,3 +1,4 @@
+// middlewares/idempotencyMiddleware.js
 const IdempotencyKey = require('../models/idempotencyKeyModel');
 
 async function idempotencyMiddleware(req, res, next) {
@@ -33,4 +34,4 @@ async function idempotencyMiddleware(req, res, next) {
   }
 }
 
-module.exports = { idempotencyMiddleware };
+module.exports = idempotencyMiddleware;
