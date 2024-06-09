@@ -22,6 +22,7 @@ const ProfileScreen = ({ navigation }) => {
 
   const handleLogout = async () => {
     await deleteToken('jwt');
+    await deleteToken('refreshToken');
     navigation.navigate('Login');
   };
 

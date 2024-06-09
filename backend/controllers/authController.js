@@ -49,13 +49,12 @@ async function login(req, res) {
 
 async function refreshToken(req, res) {
   const { refreshToken } = req.body;
-  console.log("Got a refresh token: ", refreshToken)
   if (!refreshToken) return res.status(401).json({ message: 'Refresh token not provided' });
 
   jwt.verify(refreshToken, REFRESH_TOKEN_SECRET, (err, user) => {
     if (err) return res.status(403).json({ message: 'Invalid refresh token' });
 
-    const newToken = jwt.sign({ userId: user.userId, email: user.email }, JWT_SECRET, { expiresIn: '11h' });
+    const newToken = jwt.sign({ userId: user.userId, email: user.email }, JWT_SECRET, { expiresIn: '1m' });
     const newRefreshToken = jwt.sign({ userId: user.userId, email: user.email }, REFRESH_TOKEN_SECRET, { expiresIn: '7d' });
     res.status(200).json({ token: newToken, refreshToken: newRefreshToken });
   });

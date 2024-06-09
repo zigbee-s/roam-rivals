@@ -13,8 +13,9 @@ const SignupScreen = ({ navigation }) => {
     try {
       const response = await apiClient.post('/auth/signup', { name, email, password });
       console.log('Signup Token:', response.data.token); // Debugging
-      await saveToken(response.data.token);
-      navigation.navigate('Login');
+      await saveToken(response.data.token, 'jwt');
+      await saveToken(response.data.refreshToken, 'refreshToken');
+      navigation.navigate('Profile');
     } catch (error) {
       if (error.response && error.response.data.errors) {
         setErrors(error.response.data.errors);

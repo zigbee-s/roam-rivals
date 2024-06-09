@@ -1,5 +1,5 @@
 import axios from 'axios';
-import { getToken, saveToken } from './tokenStorage';
+import { getToken, saveToken, deleteToken } from './tokenStorage';
 
 const apiClient = axios.create({
   baseURL: 'http://localhost:3000', // Update to your server URL
@@ -7,7 +7,6 @@ const apiClient = axios.create({
 
 apiClient.interceptors.request.use(async (config) => {
   const token = await getToken();
-  console.log('Token Used for API Request:', token); // Debugging
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
   }
@@ -17,10 +16,28 @@ apiClient.interceptors.request.use(async (config) => {
 apiClient.interceptors.response.use(
   (response) => response,
   async (error) => {
-    if (error.response && error.response.status === 401) {
-      console.log("Unauthorized - Clearing Token"); // Debugging
-      await saveToken(null); // Clear token from AsyncStorage
-      // Handle navigation to login if needed
+    const originalRequest = error.config;
+
+    // If error status is 403, it means the token is invalid
+    if (error.response && error.response.status === 403 && !originalRequest._retry) {
+      originalRequest._retry = true;
+      const refreshToken = await getToken('refreshToken');
+    
+      console.log("refresh Token", refreshToken)
+      if (refreshToken) {
+        try {
+          const { data } = await axios.post('http://localhost:3000/auth/refresh-token', { refreshToken });
+          await saveToken(data.token, 'jwt');
+          await saveToken(data.refreshToken, 'refreshToken');
+          originalRequest.headers.Authorization = `Bearer ${data.token}`;
+          return apiClient(originalRequest);
+        } catch (refreshError) {
+          console.log('Refresh token expired or invalid');
+          await deleteToken();
+          await deleteToken('refreshToken');
+          // Optionally, redirect to login page
+        }
+      }
     }
     return Promise.reject(error);
   }

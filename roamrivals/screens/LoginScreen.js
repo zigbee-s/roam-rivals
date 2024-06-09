@@ -11,7 +11,8 @@ const LoginScreen = ({ navigation }) => {
     try {
       const response = await apiClient.post('/auth/login', { email, password });
       console.log('Login Token:', response.data.token); // Debugging
-      await saveToken(response.data.token);
+      await saveToken(response.data.token, 'jwt');
+      await saveToken(response.data.refreshToken, 'refreshToken');
       navigation.navigate('Profile');
     } catch (error) {
       setErrorMessage(error.response.data.message || 'Login failed');

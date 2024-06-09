@@ -3,6 +3,11 @@ const jwt = require('jsonwebtoken');
 const { JWT_SECRET } = require('../config/config');
 
 const authMiddleware = (req, res, next) => {
+  const authHeader = req.headers.authorization;
+  if (!authHeader) {
+    return res.status(403).json({ message: 'Authorization header missing' });
+  }
+  
   let token = req.headers['authorization'];
 
   // Remove "Bearer " prefix if present

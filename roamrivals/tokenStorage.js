@@ -1,42 +1,53 @@
-import { Platform } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as SecureStore from 'expo-secure-store';
+import { Platform } from 'react-native';
 
-// Save token
-export const saveToken = async (token) => {
-  try {
+const Storage = {
+  getItem: async (key) => {
     if (Platform.OS === 'web') {
-      localStorage.setItem('jwt', token);
+      return AsyncStorage.getItem(key);
     } else {
-      await SecureStore.setItemAsync('jwt', token);
+      return SecureStore.getItemAsync(key);
     }
-  } catch (error) {
-    console.error('Error saving token:', error);
-  }
+  },
+  setItem: async (key, value) => {
+    if (Platform.OS === 'web') {
+      return AsyncStorage.setItem(key, value);
+    } else {
+      return SecureStore.setItemAsync(key, value);
+    }
+  },
+  removeItem: async (key) => {
+    if (Platform.OS === 'web') {
+      return AsyncStorage.removeItem(key);
+    } else {
+      return SecureStore.deleteItemAsync(key);
+    }
+  },
 };
 
-// Get token
-export const getToken = async () => {
+export const getToken = async (key = 'jwt') => {
   try {
-    if (Platform.OS === 'web') {
-      return localStorage.getItem('jwt');
-    } else {
-      return await SecureStore.getItemAsync('jwt');
-    }
+    const token = await Storage.getItem(key);
+    return token ? JSON.parse(token) : null;
   } catch (error) {
-    console.error('Error getting token:', error);
+    console.log('Error getting token from storage', error);
     return null;
   }
 };
 
-// Delete token
-export const deleteToken = async () => {
+export const saveToken = async (token, key = 'jwt') => {
   try {
-    if (Platform.OS === 'web') {
-      localStorage.removeItem('jwt');
-    } else {
-      await SecureStore.deleteItemAsync('jwt');
-    }
+    await Storage.setItem(key, JSON.stringify(token));
   } catch (error) {
-    console.error('Error deleting token:', error);
+    console.log('Error saving token to storage', error);
+  }
+};
+
+export const deleteToken = async (key = 'jwt') => {
+  try {
+    await Storage.removeItem(key);
+  } catch (error) {
+    console.log('Error deleting token from storage', error);
   }
 };
