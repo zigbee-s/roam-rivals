@@ -49,10 +49,16 @@ async function login(req, res) {
 
 async function refreshToken(req, res) {
   const { refreshToken } = req.body;
-  if (!refreshToken) return res.status(401).json({ message: 'Refresh token not provided' });
+  if (!refreshToken) return res.status(401).json({ message: 'Refresh token not provided', code: 'NO_REFRESH_TOKEN' });
 
   jwt.verify(refreshToken, REFRESH_TOKEN_SECRET, (err, user) => {
-    if (err) return res.status(403).json({ message: 'Invalid refresh token' });
+    if (err) {
+      const isExpired = err.name === 'TokenExpiredError';
+      return res.status(403).json({ 
+        message: isExpired ? 'Refresh token expired' : 'Invalid refresh token', 
+        code: isExpired ? 'REFRESH_TOKEN_EXPIRED' : 'INVALID_REFRESH_TOKEN' 
+      });
+    }
 
     const newToken = jwt.sign({ userId: user.userId, email: user.email }, JWT_SECRET, { expiresIn: '1m' });
     const newRefreshToken = jwt.sign({ userId: user.userId, email: user.email }, REFRESH_TOKEN_SECRET, { expiresIn: '7d' });

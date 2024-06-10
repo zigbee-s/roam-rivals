@@ -8,7 +8,7 @@ const rateLimit = require('express-rate-limit');
 const app = express();
 
 // Enable trust proxy
-app.set('trust proxy', true);
+// app.set('trust proxy', true);
 
 // Middleware
 app.use(express.json());
