@@ -2,7 +2,7 @@ import axios from 'axios';
 import { getToken, saveToken, deleteToken } from './tokenStorage';
 
 const apiClient = axios.create({
-  baseURL: 'http://localhost:3000', // Update to your server URL
+  baseURL: 'https://roam-rivals.onrender.com', // Update to your server URL
 });
 
 apiClient.interceptors.request.use(async (config) => {
