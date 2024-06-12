@@ -1,8 +1,8 @@
 ### System Architecture for RoamRivals using MERN Stack
 
-The MERN stack consists of MongoDB, Express.js, React.js, and Node.js. Below is a high-level system architecture to help you build RoamRivals.
+The MERN stack consists of MongoDB, Express.js, React Native, and Node.js. Below is a high-level system architecture to help you build RoamRivals.
 
-#### 1. **Frontend (React.js)**
+#### 1. **Frontend (React Native)**
 - **User Interface**: Build a responsive UI for students to register, participate in competitions, and plan trips.
 - **Components**:
   - Registration and Login -> ideomptencyKey -> auth(dynamDb) -> payments gateway
