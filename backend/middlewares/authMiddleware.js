@@ -1,10 +1,12 @@
+// middlewares/authMiddleware.js
 const jwt = require('jsonwebtoken');
 const { JWT_SECRET } = require('../config/config');
+const User = require('../models/userModel');
 
-const authMiddleware = (req, res, next) => {
+const authMiddleware = async (req, res, next) => {
   const authHeader = req.headers.authorization;
   if (!authHeader) {
-    return res.status(403).json({ message: 'Authorization header missing', code: 'AUTH_HEADER_MISSING' });
+    return res.status(403).json({ message: 'Authorization header missing' });
   }
   
   let token = req.headers['authorization'];
@@ -14,18 +16,18 @@ const authMiddleware = (req, res, next) => {
     token = token.slice(7);
   }
 
-  if (!token) return res.status(401).json({ message: 'No token provided', code: 'NO_TOKEN_PROVIDED' });
+  if (!token) return res.status(401).json({ message: 'No token provided' });
 
-  jwt.verify(token, JWT_SECRET, (err, decoded) => {
-    if (err) {
-      const isExpired = err.name === 'TokenExpiredError';
-      return res.status(403).json({ 
-        message: isExpired ? 'Token expired' : 'Invalid token', 
-        code: isExpired ? 'TOKEN_EXPIRED' : 'INVALID_TOKEN' 
-      });
+  jwt.verify(token, JWT_SECRET, async (err, decoded) => {
+    if (err) return res.status(403).json({ message: 'Invalid token' });
+
+    try {
+      const user = await User.findById(decoded.userId).select('roles');
+      req.user = { userId: decoded.userId, email: decoded.email, roles: user.roles };
+      next();
+    } catch (error) {
+      res.status(500).json({ message: 'Failed to fetch user roles', error: error.message });
     }
-    req.user = { userId: decoded.userId, email: decoded.email }; // Attach user data to the request object
-    next();
   });
 };
 

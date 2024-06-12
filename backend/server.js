@@ -4,6 +4,7 @@ const cors = require('cors');
 const connectDB = require('./db/db');
 const authRoutes = require('./routes/authRoutes');
 const userRoutes = require('./routes/userRoutes');
+const eventRoutes = require('./routes/eventRoutes');
 const rateLimit = require('express-rate-limit');
 const app = express();
 
@@ -26,6 +27,7 @@ app.use(limiter);
 // Routes
 app.use('/auth', authRoutes);
 app.use('/user', userRoutes);
+app.use('/events', eventRoutes);
 
 // Error handling middleware
 app.use((err, req, res, next) => {
