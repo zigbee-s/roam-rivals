@@ -1,3 +1,4 @@
+// tokenStorage.js
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as SecureStore from 'expo-secure-store';
 import { Platform } from 'react-native';
@@ -17,7 +18,7 @@ const Storage = {
       return SecureStore.setItemAsync(key, value);
     }
   },
-  removeItem: async (key) => {
+  deleteItem: async (key) => {
     if (Platform.OS === 'web') {
       return AsyncStorage.removeItem(key);
     } else {
@@ -27,27 +28,13 @@ const Storage = {
 };
 
 export const getToken = async (key = 'jwt') => {
-  try {
-    const token = await Storage.getItem(key);
-    return token ? JSON.parse(token) : null;
-  } catch (error) {
-    console.log('Error getting token from storage', error);
-    return null;
-  }
+  return Storage.getItem(key);
 };
 
 export const saveToken = async (token, key = 'jwt') => {
-  try {
-    await Storage.setItem(key, JSON.stringify(token));
-  } catch (error) {
-    console.log('Error saving token to storage', error);
-  }
+  await Storage.setItem(key, token);
 };
 
 export const deleteToken = async (key = 'jwt') => {
-  try {
-    await Storage.removeItem(key);
-  } catch (error) {
-    console.log('Error deleting token from storage', error);
-  }
+  await Storage.deleteItem(key);
 };

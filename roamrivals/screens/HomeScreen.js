@@ -1,3 +1,4 @@
+// screens/HomeScreen.js
 import React, { useEffect } from 'react';
 import { View, Button, StyleSheet } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
@@ -21,6 +22,7 @@ const HomeScreen = () => {
     <View style={styles.container}>
       <Button title="Signup" onPress={() => navigation.navigate('Signup')} />
       <Button title="Login" onPress={() => navigation.navigate('Login')} />
+      <Button title="Events" onPress={() => navigation.navigate('Events')} />
     </View>
   );
 };
