@@ -1,56 +1,48 @@
-// screens/EventScreen.js
-import React, { useEffect, useState } from 'react';
-import { View, Button, FlatList, Text, StyleSheet } from 'react-native';
+// EventScreen.js
+import React, { useState, useEffect } from 'react';
+import { View, Text, FlatList, StyleSheet, Button, Alert } from 'react-native';
+import { useFocusEffect } from '@react-navigation/native';
 import apiClient from '../apiClient';
-import { useNavigation } from '@react-navigation/native';
 import { getToken } from '../tokenStorage';
 
-const EventScreen = () => {
+const EventScreen = ({ navigation, userRoles }) => {
   const [events, setEvents] = useState([]);
-  const [isAdmin, setIsAdmin] = useState(false);
-  const navigation = useNavigation();
+  const [errorMessage, setErrorMessage] = useState('');
+
+  const fetchEvents = async () => {
+    try {
+      const response = await apiClient.get('/events');
+      setEvents(response.data);
+    } catch (error) {
+      setErrorMessage(error.response.data.message || 'Failed to fetch events');
+    }
+  };
 
   useEffect(() => {
-    const fetchEvents = async () => {
-      try {
-        const response = await apiClient.get('/events');
-        setEvents(response.data);
-      } catch (error) {
-        console.error('Failed to fetch events', error);
-      }
-    };
-
-    const checkAdmin = async () => {
-      const token = await getToken();
-      if (token) {
-        const { roles } = JSON.parse(atob(token.split('.')[1]));
-        if (roles.includes('admin')) {
-          setIsAdmin(true);
-        }
-      }
-    };
-
     fetchEvents();
-    checkAdmin();
   }, []);
+
+  useFocusEffect(
+    React.useCallback(() => {
+      fetchEvents();
+    }, [])
+  );
 
   const handleRegister = async (eventId) => {
     try {
-      await apiClient.post('/events/register', { eventId });
-      alert('Successfully registered for event');
+      const response = await apiClient.post('/events/register', { eventId });
+      Alert.alert('Success', response.data.message);
+      fetchEvents(); // Refresh events list
     } catch (error) {
-      console.error('Failed to register for event', error);
-      alert('Registration failed');
+      setErrorMessage(error.response.data.message || 'Failed to register for event');
     }
   };
 
   return (
     <View style={styles.container}>
-      {isAdmin && (
-        <Button
-          title="Create Event"
-          onPress={() => navigation.navigate('CreateEvent')}
-        />
+      {errorMessage ? <Text style={styles.error}>{errorMessage}</Text> : null}
+      {userRoles.includes('admin') && (
+        <Button title="Create Event" onPress={() => navigation.navigate('CreateEvent')} />
       )}
       <FlatList
         data={events}
@@ -59,8 +51,6 @@ const EventScreen = () => {
           <View style={styles.eventItem}>
             <Text style={styles.title}>{item.title}</Text>
             <Text>{item.description}</Text>
-            <Text>{new Date(item.date).toLocaleDateString()}</Text>
-            <Text>{item.location}</Text>
             <Button title="Register" onPress={() => handleRegister(item._id)} />
           </View>
         )}
@@ -78,12 +68,16 @@ const styles = StyleSheet.create({
     marginBottom: 20,
     padding: 10,
     borderWidth: 1,
-    borderColor: '#ddd',
+    borderColor: '#ccc',
     borderRadius: 5,
   },
   title: {
     fontSize: 18,
     fontWeight: 'bold',
+  },
+  error: {
+    color: 'red',
+    marginBottom: 10,
   },
 });
 

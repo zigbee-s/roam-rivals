@@ -1,4 +1,4 @@
-// screens/CreateEventScreen.js
+// CreateEventScreen.js
 import React, { useState } from 'react';
 import { View, TextInput, Button, StyleSheet, Alert } from 'react-native';
 import apiClient from '../apiClient';
@@ -8,20 +8,21 @@ const CreateEventScreen = ({ navigation }) => {
   const [description, setDescription] = useState('');
   const [date, setDate] = useState('');
   const [location, setLocation] = useState('');
+  const [errorMessage, setErrorMessage] = useState('');
 
   const handleCreateEvent = async () => {
     try {
-      await apiClient.post('/events', { title, description, date, location });
-      Alert.alert('Event created successfully');
-      navigation.navigate('Events');
+      const response = await apiClient.post('/events', { title, description, date, location });
+      Alert.alert('Success', 'Event created successfully');
+      navigation.navigate('Events', { refresh: true }); // Pass a refresh flag to refresh the events list
     } catch (error) {
-      console.error('Failed to create event', error);
-      Alert.alert('Failed to create event');
+      setErrorMessage(error.response.data.message || 'Failed to create event');
     }
   };
 
   return (
     <View style={styles.container}>
+      {errorMessage ? <Text style={styles.error}>{errorMessage}</Text> : null}
       <TextInput
         style={styles.input}
         placeholder="Title"
@@ -36,7 +37,7 @@ const CreateEventScreen = ({ navigation }) => {
       />
       <TextInput
         style={styles.input}
-        placeholder="Date (YYYY-MM-DD)"
+        placeholder="Date"
         value={date}
         onChangeText={setDate}
       />
@@ -57,11 +58,14 @@ const styles = StyleSheet.create({
     padding: 20,
   },
   input: {
-    height: 40,
-    borderColor: 'gray',
     borderWidth: 1,
+    borderColor: '#ccc',
+    padding: 10,
     marginBottom: 10,
-    paddingHorizontal: 10,
+  },
+  error: {
+    color: 'red',
+    marginBottom: 10,
   },
 });
 

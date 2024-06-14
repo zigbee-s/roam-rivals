@@ -1,3 +1,4 @@
+// LoginScreen.js
 import React, { useState } from 'react';
 import { View, StyleSheet } from 'react-native';
 import AuthForm from '../components/AuthForm';
@@ -13,7 +14,7 @@ const LoginScreen = ({ navigation }) => {
       console.log('Login Token:', response.data.token); // Debugging
       await saveToken(response.data.token, 'jwt');
       await saveToken(response.data.refreshToken, 'refreshToken');
-      navigation.navigate('Profile');
+      navigation.navigate('Events');
     } catch (error) {
       setErrorMessage(error.response.data.message || 'Login failed');
     }
