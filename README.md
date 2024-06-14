@@ -8,7 +8,10 @@ The MERN stack consists of MongoDB, Express.js, React Native, and Node.js. Below
   - Registration and Login -> ideomptencyKey -> auth(dynamDb) -> payments gateway
   - Competition Dashboard -> Admin (create view, result) -> user(view, participate)
   - Wallet and coin 	
-  - Trip Planning and Booking
+
+
+
+   - Trip Planning and Booking
   - User Profile
   - Forums and Chat
   - Advertisement View
@@ -19,9 +22,10 @@ The MERN stack consists of MongoDB, Express.js, React Native, and Node.js. Below
 - **APIs**: Develop RESTful APIs for various functionalities:
   - User Authentication
   - Competition Management
-  - Trip Management
-  - Forum and Chat
   - Payment Processing
+
+  - Trip Management
+  - Forum and Chat 
   - Advertisement and Sponsor Integration
   - Data Analytics
 
@@ -30,7 +34,9 @@ The MERN stack consists of MongoDB, Express.js, React Native, and Node.js. Below
   - Users: Store user information and profiles
   - Competitions: Details of competitions, entries, and results
   - Trips: Information about trips, bookings, and reviews
-  - Forums: Threads and messages
+
+
+   - Forums: Threads and messages
   - Advertisements: Ads and related data
   - Transactions: Payment records and virtual coins
   - Sponsors: Sponsor details and related campaigns
