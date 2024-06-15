@@ -1,6 +1,5 @@
-// CreateEventScreen.js
 import React, { useState } from 'react';
-import { View, TextInput, Button, StyleSheet, Alert } from 'react-native';
+import { View, TextInput, Button, StyleSheet, Alert, ActivityIndicator } from 'react-native';
 import apiClient from '../apiClient';
 
 const CreateEventScreen = ({ navigation }) => {
@@ -9,14 +8,18 @@ const CreateEventScreen = ({ navigation }) => {
   const [date, setDate] = useState('');
   const [location, setLocation] = useState('');
   const [errorMessage, setErrorMessage] = useState('');
+  const [loading, setLoading] = useState(false);  // New loading state
 
   const handleCreateEvent = async () => {
+    setLoading(true);  // Show loading indicator
     try {
       const response = await apiClient.post('/events', { title, description, date, location });
       Alert.alert('Success', 'Event created successfully');
-      navigation.navigate('Events', { refresh: true }); // Pass a refresh flag to refresh the events list
+      navigation.navigate('Events', { refresh: true });  // Pass a refresh flag to refresh the events list
+      setLoading(false);  // Hide loading indicator
     } catch (error) {
       setErrorMessage(error.response.data.message || 'Failed to create event');
+      setLoading(false);  // Hide loading indicator
     }
   };
 
@@ -47,7 +50,11 @@ const CreateEventScreen = ({ navigation }) => {
         value={location}
         onChangeText={setLocation}
       />
-      <Button title="Create Event" onPress={handleCreateEvent} />
+      {loading ? (
+        <ActivityIndicator size="large" color="#0000ff" />  // Loading indicator
+      ) : (
+        <Button title="Create Event" onPress={handleCreateEvent} disabled={loading} />  // Disable button when loading
+      )}
     </View>
   );
 };

@@ -1,13 +1,14 @@
+// apiClient.js
 import axios from 'axios';
 import { getToken, saveToken, deleteToken } from './tokenStorage';
+import { navigate } from './navigationRef'; // Assuming you have a navigation reference setup
 
-devURL = 'http://localhost:3000'
-prodURL = 'https://roam-rivals.onrender.com'
-
-baseurl = devURL
+const devURL = 'http://localhost:3000';
+const prodURL = 'https://roam-rivals.onrender.com';
+const baseURL = process.env.NODE_ENV === 'production' ? prodURL : devURL;
 
 const apiClient = axios.create({
-  baseURL: baseurl, // Update to your server URL
+  baseURL,
 });
 
 apiClient.interceptors.request.use(async (config) => {
@@ -29,7 +30,7 @@ apiClient.interceptors.response.use(
 
       if (refreshToken) {
         try {
-          const { data } = await axios.post(baseurl + '/auth/refresh-token', { refreshToken });
+          const { data } = await axios.post(baseURL + '/auth/refresh-token', { refreshToken });
           await saveToken(data.token, 'jwt');
           await saveToken(data.refreshToken, 'refreshToken');
           originalRequest.headers.Authorization = `Bearer ${data.token}`;
@@ -38,7 +39,10 @@ apiClient.interceptors.response.use(
           console.log('Refresh token expired or invalid');
           await deleteToken();
           await deleteToken('refreshToken');
+          navigate('Login'); // Redirect to login screen
         }
+      } else {
+        navigate('Login'); // Redirect to login screen
       }
     }
     return Promise.reject(error);

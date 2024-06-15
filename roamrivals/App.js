@@ -65,7 +65,9 @@ const App = () => {
       <Stack.Navigator initialRouteName={initialRoute}>
         <Stack.Screen name="Home" component={HomeScreen} />
         <Stack.Screen name="Signup" component={SignupScreen} />
-        <Stack.Screen name="Login" component={LoginScreen} />
+        <Stack.Screen name="Login">
+          {(props) => <LoginScreen {...props} setUserRoles={setUserRoles} />}
+        </Stack.Screen>
         <Stack.Screen name="Profile" component={ProfileScreen} options={profileButton} />
         <Stack.Screen name="Events" options={profileButton}>
           {(props) => <EventScreen {...props} userRoles={userRoles} />}
