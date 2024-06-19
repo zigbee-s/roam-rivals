@@ -1,3 +1,4 @@
+// utils/tokenUtils.js
 const jwt = require('jsonwebtoken');
 const { JWT_SECRET, JWT_REFRESH_SECRET } = require('../config/config');
 

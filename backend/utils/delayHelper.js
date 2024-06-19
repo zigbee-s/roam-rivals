@@ -1,4 +1,4 @@
-// helpers/delayHelper.js
+// utils/delayHelper.js
 
 // Function to create a delay using setTimeout wrapped in a Promise
 function delay(ms) {

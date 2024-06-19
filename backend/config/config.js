@@ -1,3 +1,4 @@
+// confog/config.js
 require('dotenv').config();
 
 const schoolDomains = [
