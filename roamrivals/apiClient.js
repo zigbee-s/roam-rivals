@@ -6,8 +6,7 @@ import { v4 as uuidv4 } from 'uuid';
 
 const devURL = 'http://localhost:3000';
 const prodURL = 'https://roam-rivals.onrender.com';
-// const baseURL = process.env.NODE_ENV === 'production' ? prodURL : devURL;
-baseURL = prodURL
+const baseURL = process.env.NODE_ENV === 'production' ? prodURL : devURL;
 
 const apiClient = axios.create({
   baseURL,
