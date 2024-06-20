@@ -1,4 +1,4 @@
-// routes/eventRoutes.js
+// backend/routes/eventRoutes.js
 const express = require('express');
 const { createEvent, getEvents, getEventById, updateEvent, deleteEvent, registerEvent } = require('../controllers/eventController');
 const { authMiddleware } = require('../middlewares/authMiddleware');

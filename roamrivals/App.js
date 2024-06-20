@@ -8,6 +8,7 @@ import ProfileScreen from './screens/ProfileScreen';
 import HomeScreen from './screens/HomeScreen';
 import EventScreen from './screens/EventScreen';
 import CreateEventScreen from './screens/CreateEventScreen';
+import AddQuestionsScreen from './screens/AddQuestionsScreen';
 import { getToken } from './tokenStorage';
 import { ActivityIndicator, Button, View } from 'react-native';
 import apiClient from './apiClient';
@@ -73,6 +74,7 @@ const App = () => {
           {(props) => <EventScreen {...props} userRoles={userRoles} />}
         </Stack.Screen>
         <Stack.Screen name="CreateEvent" component={CreateEventScreen} options={profileButton} />
+        <Stack.Screen name="AddQuestions" component={AddQuestionsScreen} />
       </Stack.Navigator>
     </NavigationContainer>
   );

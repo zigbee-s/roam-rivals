@@ -19,4 +19,19 @@ async function sendOtpEmail(to, otp) {
   await transporter.sendMail(mailOptions);
 }
 
-module.exports = { sendOtpEmail };
+async function sendEventRegistrationEmail(email, eventTitle) {
+  const mailOptions = {
+    from: process.env.EMAIL_USER,
+    to: email,
+    subject: 'Event Registration Confirmation',
+    text: `You have successfully registered for the event: ${eventTitle}`
+  };
+
+  try {
+    await transporter.sendMail(mailOptions);
+  } catch (error) {
+    console.error('Error sending email:', error);
+  }
+}
+
+module.exports = { sendOtpEmail, sendEventRegistrationEmail };

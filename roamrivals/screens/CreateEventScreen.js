@@ -1,5 +1,6 @@
+// roamrivals/screens/CreateEventScreen.js
 import React, { useState } from 'react';
-import { View, TextInput, Button, StyleSheet, Alert, ActivityIndicator } from 'react-native';
+import { View, TextInput, Button, StyleSheet, Alert, ActivityIndicator, Picker, ScrollView, Text } from 'react-native';
 import apiClient from '../apiClient';
 
 const CreateEventScreen = ({ navigation }) => {
@@ -7,24 +8,73 @@ const CreateEventScreen = ({ navigation }) => {
   const [description, setDescription] = useState('');
   const [date, setDate] = useState('');
   const [location, setLocation] = useState('');
+  const [eventType, setEventType] = useState('general');
+  const [numberOfQuestions, setNumberOfQuestions] = useState('');
+  const [difficulty, setDifficulty] = useState('');
+  const [timeLimit, setTimeLimit] = useState('');
+  const [questions, setQuestions] = useState('');
   const [errorMessage, setErrorMessage] = useState('');
-  const [loading, setLoading] = useState(false);  // New loading state
+  const [loading, setLoading] = useState(false);
 
   const handleCreateEvent = async () => {
-    setLoading(true);  // Show loading indicator
+    setLoading(true);
     try {
-      const response = await apiClient.post('/events', { title, description, date, location });
+      let quizQuestions = [];
+      if (eventType === 'quiz') {
+        try {
+          quizQuestions = JSON.parse(questions);
+          if (!Array.isArray(quizQuestions)) {
+            throw new Error('Questions should be a JSON array.');
+          }
+        } catch (error) {
+          setLoading(false);
+          setErrorMessage('Invalid JSON format for questions.');
+          return;
+        }
+      }
+      const response = await apiClient.post('/events', { title, description, date, location, eventType, numberOfQuestions, difficulty, timeLimit, questions: quizQuestions });
       Alert.alert('Success', 'Event created successfully');
-      navigation.navigate('Events', { refresh: true });  // Pass a refresh flag to refresh the events list
-      setLoading(false);  // Hide loading indicator
+      navigation.navigate('Events', { refresh: true });
+      setLoading(false);
     } catch (error) {
-      setErrorMessage(error.response.data.message || 'Failed to create event');
-      setLoading(false);  // Hide loading indicator
+      setErrorMessage(error.response?.data?.message || 'Failed to create event');
+      setLoading(false);
     }
   };
 
+  const handleSetSampleQuestions = () => {
+    const sampleQuestions = [
+      {
+        question: "What is the chemical symbol for water?",
+        options: ["H2O", "O2", "CO2", "H2"],
+        correctAnswer: "H2O"
+      },
+      {
+        question: "What planet is known as the Red Planet?",
+        options: ["Earth", "Mars", "Jupiter", "Saturn"],
+        correctAnswer: "Mars"
+      },
+      {
+        question: "What gas do plants absorb from the atmosphere?",
+        options: ["Oxygen", "Hydrogen", "Carbon Dioxide", "Nitrogen"],
+        correctAnswer: "Carbon Dioxide"
+      },
+      {
+        question: "What is the powerhouse of the cell?",
+        options: ["Nucleus", "Ribosome", "Mitochondria", "Golgi apparatus"],
+        correctAnswer: "Mitochondria"
+      },
+      {
+        question: "How many elements are there in the periodic table?",
+        options: ["108", "112", "118", "120"],
+        correctAnswer: "118"
+      }
+    ];
+    setQuestions(JSON.stringify(sampleQuestions, null, 2));
+  };
+
   return (
-    <View style={styles.container}>
+    <ScrollView contentContainerStyle={styles.container}>
       {errorMessage ? <Text style={styles.error}>{errorMessage}</Text> : null}
       <TextInput
         style={styles.input}
@@ -50,18 +100,56 @@ const CreateEventScreen = ({ navigation }) => {
         value={location}
         onChangeText={setLocation}
       />
-      {loading ? (
-        <ActivityIndicator size="large" color="#0000ff" />  // Loading indicator
-      ) : (
-        <Button title="Create Event" onPress={handleCreateEvent} disabled={loading} />  // Disable button when loading
+      <Picker
+        selectedValue={eventType}
+        style={styles.picker}
+        onValueChange={(itemValue) => setEventType(itemValue)}
+      >
+        <Picker.Item label="General" value="general" />
+        <Picker.Item label="Quiz" value="quiz" />
+      </Picker>
+      {eventType === 'quiz' && (
+        <>
+          <TextInput
+            style={styles.input}
+            placeholder="Number of Questions"
+            value={numberOfQuestions}
+            onChangeText={setNumberOfQuestions}
+          />
+          <TextInput
+            style={styles.input}
+            placeholder="Difficulty"
+            value={difficulty}
+            onChangeText={setDifficulty}
+          />
+          <TextInput
+            style={styles.input}
+            placeholder="Time Limit (minutes)"
+            value={timeLimit}
+            onChangeText={setTimeLimit}
+          />
+          <TextInput
+            style={[styles.input, { height: 100 }]}
+            placeholder="Questions (JSON format)"
+            value={questions}
+            onChangeText={setQuestions}
+            multiline
+          />
+          <Button title="Set Sample Questions" onPress={handleSetSampleQuestions} />
+        </>
       )}
-    </View>
+      {loading ? (
+        <ActivityIndicator size="large" color="#0000ff" />
+      ) : (
+        <Button title="Create Event" onPress={handleCreateEvent} disabled={loading} />
+      )}
+    </ScrollView>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
-    flex: 1,
+    flexGrow: 1,
     padding: 20,
   },
   input: {
@@ -69,6 +157,10 @@ const styles = StyleSheet.create({
     borderColor: '#ccc',
     padding: 10,
     marginBottom: 10,
+  },
+  picker: {
+    height: 50,
+    width: '100%',
   },
   error: {
     color: 'red',

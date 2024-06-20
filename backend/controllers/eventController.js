@@ -1,13 +1,23 @@
-// controllers/eventController.js
-const Event = require('../models/eventModel');
+// backend/controllers/eventController.js
+const { Event, QuizEvent } = require('../models/eventModel');
 const User = require('../models/userModel');
+const { sendEventRegistrationEmail } = require('../utils/emailService');
 
 async function createEvent(req, res) {
-  const { title, description, date, location } = req.body;
+  const { title, description, date, location, eventType, numberOfQuestions, difficulty, timeLimit, questions } = req.body;
   const createdBy = req.user.userId;
-  
+
   try {
-    const event = new Event({ title, description, date, location, createdBy });
+    let event;
+    if (eventType === 'quiz') {
+      if (!req.user.roles.includes('admin')) {
+        return res.status(403).json({ message: 'Only admins can create quiz events' });
+      }
+      event = new QuizEvent({ title, description, date, location, createdBy, eventType, numberOfQuestions, difficulty, timeLimit, questions });
+    } else {
+      event = new Event({ title, description, date, location, createdBy, eventType });
+    }
+
     await event.save();
     res.status(201).json(event);
   } catch (error) {
@@ -26,7 +36,7 @@ async function getEvents(req, res) {
 
 async function getEventById(req, res) {
   const { eventId } = req.params;
-  
+
   try {
     const event = await Event.findById(eventId);
     if (!event) {
@@ -40,10 +50,10 @@ async function getEventById(req, res) {
 
 async function updateEvent(req, res) {
   const { eventId } = req.params;
-  const { title, description, date, location } = req.body;
+  const { title, description, date, location, numberOfQuestions, difficulty, timeLimit, questions } = req.body;
 
   try {
-    const event = await Event.findByIdAndUpdate(eventId, { title, description, date, location }, { new: true });
+    const event = await Event.findByIdAndUpdate(eventId, { title, description, date, location, numberOfQuestions, difficulty, timeLimit, questions }, { new: true });
     if (!event) {
       return res.status(404).json({ message: 'Event not found' });
     }
@@ -68,31 +78,33 @@ async function deleteEvent(req, res) {
 }
 
 async function registerEvent(req, res) {
-    const { eventId } = req.body;
-    const userId = req.user.userId;
-    try {
-      const event = await Event.findById(eventId);
-      if (!event) {
-        return res.status(404).json({ message: 'Event not found' });
-      }
-  
-      const user = await User.findById(userId);
-      if (!user) {
-        return res.status(404).json({ message: 'User not found' });
-      }
-  
-      if (user.events.includes(eventId)) {
-        return res.status(400).json({ message: 'User already registered for this event' });
-      }
-  
-      user.events.push(eventId);
-      await user.save();
-  
-      res.status(200).json({ message: 'Registered for event successfully', event });
-    } catch (error) {
-      res.status(500).json({ message: 'Failed to register for event', error: error.message });
-    }
-  }
+  const { eventId } = req.body;
+  const userId = req.user.userId;
 
+  try {
+    const event = await Event.findById(eventId);
+    if (!event) {
+      return res.status(404).json({ message: 'Event not found' });
+    }
+
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    if (user.events.includes(eventId)) {
+      return res.status(400).json({ message: 'User already registered for this event' });
+    }
+
+    user.events.push(eventId);
+    await user.save();
+
+    await sendEventRegistrationEmail(user.email, event.title);
+
+    res.status(200).json({ message: 'Registered for event successfully', event });
+  } catch (error) {
+    res.status(500).json({ message: 'Failed to register for event', error: error.message });
+  }
+}
 
 module.exports = { createEvent, getEvents, getEventById, updateEvent, deleteEvent, registerEvent };
