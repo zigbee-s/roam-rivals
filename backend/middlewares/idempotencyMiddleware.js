@@ -1,37 +1,29 @@
-// middlewares/idempotencyMiddleware.js
+// backend/middlewares/idempotencyMiddleware.js
 const IdempotencyKey = require('../models/idempotencyKeyModel');
 
-async function idempotencyMiddleware(req, res, next) {
+const idempotencyMiddleware = async (req, res, next) => {
   const idempotencyKey = req.headers['idempotency-key'];
-
   if (!idempotencyKey) {
-    return res.status(400).json({ error: 'Idempotency key is required' });
+    return res.status(400).json({ message: 'Idempotency key missing' });
   }
 
   try {
-    const existingEntry = await IdempotencyKey.findOne({ idempotencyKey });
+    const existingKey = await IdempotencyKey.findOne({ key: idempotencyKey });
 
-    if (existingEntry) {
-      if (existingEntry.status === 'completed') {
-        return res.status(200).json(existingEntry.responseBody);
-      } else {
-        return res.status(409).json({ error: 'Duplicate request' });
+    if (existingKey) {
+      if (existingKey.status === 'completed') {
+        return res.status(200).json(existingKey.response);
       }
+      return res.status(409).json({ message: 'Request is already being processed' });
     }
 
-    const newEntry = await IdempotencyKey.create({
-      idempotencyKey,
-      requestBody: req.body,
-      status: 'pending'
-    });
-
-    req.idempotencyKeyEntry = newEntry;
-
-    next(); // Pass control to the next middleware
+    const newKey = new IdempotencyKey({ key: idempotencyKey, requestBody: req.body });
+    await newKey.save();
+    req.idempotencyKey = newKey;
+    next();
   } catch (error) {
-    console.error('Error checking idempotency', error);
-    res.status(500).json({ error: 'Internal server error' });
+    res.status(500).json({ message: 'Idempotency check failed', error: error.message });
   }
-}
+};
 
 module.exports = idempotencyMiddleware;
