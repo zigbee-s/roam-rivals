@@ -1,11 +1,13 @@
-// apiClient.js
+// roamrivals/apiClient.js
 import axios from 'axios';
 import { getToken, saveToken, deleteToken } from './tokenStorage';
-import { navigate } from './navigationRef'; // Assuming you have a navigation reference setup
+import { navigate } from './navigationRef';
+import { v4 as uuidv4 } from 'uuid';
 
 const devURL = 'http://localhost:3000';
 const prodURL = 'https://roam-rivals.onrender.com';
-const baseURL = process.env.NODE_ENV === 'production' ? prodURL : devURL;
+// const baseURL = process.env.NODE_ENV === 'production' ? prodURL : devURL;
+baseURL = prodURL
 
 const apiClient = axios.create({
   baseURL,
@@ -16,6 +18,12 @@ apiClient.interceptors.request.use(async (config) => {
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
   }
+
+  // Generate and add idempotency key for POST requests
+  if (config.method === 'post') {
+    config.headers['Idempotency-Key'] = uuidv4();
+  }
+
   return config;
 });
 
@@ -30,19 +38,18 @@ apiClient.interceptors.response.use(
 
       if (refreshToken) {
         try {
-          const { data } = await axios.post(baseURL + '/auth/refresh-token', { refreshToken });
+          const { data } = await axios.post(`${baseURL}/auth/refresh-token`, { refreshToken });
           await saveToken(data.token, 'jwt');
           await saveToken(data.refreshToken, 'refreshToken');
           originalRequest.headers.Authorization = `Bearer ${data.token}`;
           return apiClient(originalRequest);
         } catch (refreshError) {
-          console.log('Refresh token expired or invalid');
           await deleteToken();
           await deleteToken('refreshToken');
-          navigate('Login'); // Redirect to login screen
+          navigate('Login');
         }
       } else {
-        navigate('Login'); // Redirect to login screen
+        navigate('Login');
       }
     }
     return Promise.reject(error);

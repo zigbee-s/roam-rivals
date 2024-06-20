@@ -1,3 +1,4 @@
+// roamrivals/screens/LoginScreen.js
 import React, { useState } from 'react';
 import { View, StyleSheet, ActivityIndicator, TextInput, Button, Text } from 'react-native';
 import AuthForm from '../components/AuthForm';
@@ -67,10 +68,10 @@ const LoginScreen = ({ navigation, setUserRoles }) => {
         </View>
       ) : (
         <AuthForm
-          buttonText="Login"
-          onSubmit={handleLogin}
+          headerText="Login"
           errorMessage={errorMessage}
-          includeName={false}
+          onSubmit={handleLogin}
+          submitButtonText="Log In"
         />
       )}
     </View>
@@ -81,6 +82,7 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     justifyContent: 'center',
+    padding: 20,
   },
   input: {
     borderBottomWidth: 1,

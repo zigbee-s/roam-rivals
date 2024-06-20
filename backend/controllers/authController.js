@@ -1,19 +1,16 @@
+// backend/controllers/authController.js
 const User = require('../models/userModel');
 const OTP = require('../models/otpModel');
-const jwt = require('jsonwebtoken');
 const bcrypt = require('bcrypt');
-const { JWT_SECRET, REFRESH_TOKEN_SECRET } = require('../config/config');
+const { generateToken, verifyToken } = require('../utils/tokenUtils');
 const { sendOtpEmail } = require('../utils/emailService');
 const { generateOtp } = require('../utils/otpUtils');
-
-function generateToken(user) {
-  const token = jwt.sign({ userId: user._id, email: user.email, roles: user.roles }, JWT_SECRET, { expiresIn: '1h' });
-  const refreshToken = jwt.sign({ userId: user._id, email: user.email, roles: user.roles }, REFRESH_TOKEN_SECRET, { expiresIn: '7d' });
-  return { token, refreshToken };
-}
+const IdempotencyKey = require('../models/idempotencyKeyModel');
 
 async function signup(req, res) {
   const { name, email, password } = req.body;
+  const idempotencyKey = req.idempotencyKey;
+
   try {
     const existingUser = await User.findOne({ email });
     if (existingUser) {
@@ -22,10 +19,15 @@ async function signup(req, res) {
 
     const otp = generateOtp();
     await OTP.create({ email, otp });
-
     await sendOtpEmail(email, otp);
 
-    res.status(201).json({ message: 'OTP sent to email. Please verify OTP to complete signup.' });
+    const response = { message: 'OTP sent to email. Please verify OTP to complete signup.' };
+
+    idempotencyKey.status = 'completed';
+    idempotencyKey.response = response;
+    await idempotencyKey.save();
+
+    res.status(201).json(response);
   } catch (error) {
     res.status(500).json({ message: 'Signup failed', error: error.message });
   }
@@ -33,6 +35,8 @@ async function signup(req, res) {
 
 async function verifyOtp(req, res) {
   const { name, email, password, otp } = req.body;
+  const idempotencyKey = req.idempotencyKey;
+
   try {
     const otpRecord = await OTP.findOne({ email, otp });
     if (!otpRecord) {
@@ -45,7 +49,13 @@ async function verifyOtp(req, res) {
     await user.save();
 
     const { token, refreshToken } = generateToken(user);
-    res.status(200).json({ token, refreshToken });
+    const response = { token, refreshToken };
+
+    idempotencyKey.status = 'completed';
+    idempotencyKey.response = response;
+    await idempotencyKey.save();
+
+    res.status(200).json(response);
   } catch (error) {
     res.status(500).json({ message: 'OTP verification failed', error: error.message });
   }
@@ -53,6 +63,8 @@ async function verifyOtp(req, res) {
 
 async function login(req, res) {
   const { email, password } = req.body;
+  const idempotencyKey = req.idempotencyKey;
+
   try {
     const user = await User.findOne({ email });
     if (!user) {
@@ -66,10 +78,15 @@ async function login(req, res) {
 
     const otp = generateOtp();
     await OTP.create({ email, otp });
-
     await sendOtpEmail(email, otp);
 
-    res.status(200).json({ message: 'OTP sent to email. Please verify OTP to complete login.' });
+    const response = { message: 'OTP sent to email. Please verify OTP to complete login.' };
+
+    idempotencyKey.status = 'completed';
+    idempotencyKey.response = response;
+    await idempotencyKey.save();
+
+    res.status(200).json(response);
   } catch (error) {
     res.status(500).json({ message: 'Login failed', error: error.message });
   }
@@ -77,6 +94,8 @@ async function login(req, res) {
 
 async function verifyOtpForLogin(req, res) {
   const { email, otp } = req.body;
+  const idempotencyKey = req.idempotencyKey;
+
   try {
     const otpRecord = await OTP.findOne({ email, otp });
     if (!otpRecord) {
@@ -91,7 +110,13 @@ async function verifyOtpForLogin(req, res) {
     }
 
     const { token, refreshToken } = generateToken(user);
-    res.status(200).json({ token, refreshToken });
+    const response = { token, refreshToken };
+
+    idempotencyKey.status = 'completed';
+    idempotencyKey.response = response;
+    await idempotencyKey.save();
+
+    res.status(200).json(response);
   } catch (error) {
     res.status(500).json({ message: 'OTP verification failed', error: error.message });
   }
@@ -101,13 +126,13 @@ async function refreshToken(req, res) {
   const { refreshToken } = req.body;
   if (!refreshToken) return res.status(401).json({ message: 'Refresh token not provided' });
 
-  jwt.verify(refreshToken, REFRESH_TOKEN_SECRET, (err, user) => {
-    if (err) return res.status(403).json({ message: 'Invalid refresh token' });
-
-    const newToken = jwt.sign({ userId: user.userId, email: user.email, roles: user.roles }, JWT_SECRET, { expiresIn: '1h' });
-    const newRefreshToken = jwt.sign({ userId: user.userId, email: user.email, roles: user.roles }, REFRESH_TOKEN_SECRET, { expiresIn: '7d' });
-    res.status(200).json({ token: newToken, refreshToken: newRefreshToken });
-  });
+  try {
+    const decoded = verifyToken(refreshToken, REFRESH_TOKEN_SECRET);
+    const newTokens = generateToken(decoded);
+    res.status(200).json(newTokens);
+  } catch (error) {
+    res.status(403).json({ message: 'Invalid refresh token', error: error.message });
+  }
 }
 
 module.exports = { signup, verifyOtp, verifyOtpForLogin, login, refreshToken };

@@ -1,13 +1,12 @@
-// models/idempotencyKeyModel.js
+// backend/models/idempotencyKeyModel.js
 const mongoose = require('mongoose');
 
 const idempotencyKeySchema = new mongoose.Schema({
-  idempotencyKey: { type: String, required: true, unique: true },
-  requestBody: { type: Object, required: true },
-  responseBody: { type: Object },
-  status: { type: String, required: true, enum: ['pending', 'completed'], default: 'pending' },
-  createdAt: { type: Date, default: Date.now, expires: '1h' },
-  expiresAt: { type: Date, default: () => new Date(Date.now() + 3600 * 1000) }
-});
+  key: { type: String, required: true, unique: true },
+  requestBody: { type: mongoose.Schema.Types.Mixed },
+  response: { type: mongoose.Schema.Types.Mixed },
+  status: { type: String, enum: ['pending', 'completed'], default: 'pending' },
+}, { timestamps: true });
 
-module.exports = mongoose.model('IdempotencyKey', idempotencyKeySchema);
+const IdempotencyKey = mongoose.model('IdempotencyKey', idempotencyKeySchema);
+module.exports = IdempotencyKey;
