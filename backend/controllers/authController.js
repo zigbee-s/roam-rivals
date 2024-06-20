@@ -45,8 +45,7 @@ async function verifyOtp(req, res) {
 
     await OTP.deleteOne({ _id: otpRecord._id });
 
-    const hashedPassword = await bcrypt.hash(password, 10);
-    const user = new User({ name, email, password: hashedPassword, roles: ['user'] });
+    const user = new User({ name, email, password, roles: ['user'] });
     await user.save();
 
     const { token, refreshToken } = generateToken(user);
