@@ -33,7 +33,7 @@ const photographyEventSchema = new Schema({
   maxPhotos: { type: Number, required: true },
   themes: [{ type: String, required: true }],
   submissionDeadline: { type: Date, required: true },
-  photos: [{ type: Schema.Types.ObjectId, ref: 'Photo' }]  // Add this line to store references to photos
+  photos: [{ type: Schema.Types.ObjectId, ref: 'Photo' }]
 });
 
 const PhotographyEvent = Event.discriminator('photography', photographyEventSchema);

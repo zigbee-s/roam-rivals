@@ -31,27 +31,23 @@ async function uploadPhoto(req, res) {
 
 async function getAllPhotos(req, res) {
   try {
-    const photos = await Photo.find()
-      .populate({ path: 'uploadedBy', select: 'name email' })
-      .populate({ path: 'eventId', select: 'title' });
+    const photos = await PhotographyEvent.find().populate('photos');
     res.status(200).json(photos);
   } catch (error) {
     res.status(500).json({ message: 'Failed to fetch photos', error: error.message });
   }
 }
 
-async function getPhoto(req, res) {
+async function getPhotoById(req, res) {
   const { photoId } = req.params;
   try {
-    const photo = await Photo.findById(photoId)
-      .populate({ path: 'uploadedBy', select: 'name email' })
-      .populate({ path: 'eventId', select: 'title' });
+    const photo = await Photo.findById(photoId);
     if (!photo) {
       return res.status(404).json({ message: 'Photo not found' });
     }
     res.status(200).json(photo);
   } catch (error) {
-    res.status (500).json({ message: 'Failed to fetch photo', error: error.message });
+    res.status(500).json({ message: 'Failed to fetch photo', error: error.message });
   }
 }
 
@@ -62,10 +58,17 @@ async function deletePhoto(req, res) {
     if (!photo) {
       return res.status(404).json({ message: 'Photo not found' });
     }
+
+    // Optionally, you can also remove the reference to the photo from the PhotographyEvent if needed.
+    await PhotographyEvent.updateMany(
+      { photos: photoId },
+      { $pull: { photos: photoId } }
+    );
+
     res.status(200).json({ message: 'Photo deleted successfully' });
   } catch (error) {
     res.status(500).json({ message: 'Failed to delete photo', error: error.message });
   }
 }
 
-module.exports = { uploadPhoto, getAllPhotos, getPhoto, deletePhoto };
+module.exports = { uploadPhoto, getAllPhotos, getPhotoById, deletePhoto };
