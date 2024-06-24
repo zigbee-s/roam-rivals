@@ -1,21 +1,29 @@
 // backend/controllers/eventController.js
-const { Event, QuizEvent } = require('../models/eventModel');
+const { Event, QuizEvent, PhotographyEvent } = require('../models/eventModel');
 const User = require('../models/userModel');
 const { sendEventRegistrationEmail } = require('../utils/emailService');
 
 async function createEvent(req, res) {
-  const { title, description, date, location, eventType, numberOfQuestions, difficulty, timeLimit, questions } = req.body;
+  const { title, description, date, location, eventType, ...rest } = req.body;
   const createdBy = req.user.userId;
 
   try {
     let event;
-    if (eventType === 'quiz') {
-      if (!req.user.roles.includes('admin')) {
-        return res.status(403).json({ message: 'Only admins can create quiz events' });
-      }
-      event = new QuizEvent({ title, description, date, location, createdBy, eventType, numberOfQuestions, difficulty, timeLimit, questions });
-    } else {
-      event = new Event({ title, description, date, location, createdBy, eventType });
+    switch (eventType) {
+      case 'quiz':
+        if (!req.user.roles.includes('admin')) {
+          return res.status(403).json({ message: 'Only admins can create quiz events' });
+        }
+        event = new QuizEvent({ title, description, date, location, createdBy, eventType, ...rest });
+        break;
+      case 'photography':
+        if (!req.user.roles.includes('admin')) {
+          return res.status(403).json({ message: 'Only admins can create photography events' });
+        }
+        event = new PhotographyEvent({ title, description, date, location, createdBy, eventType, ...rest });
+        break;
+      default:
+        event = new Event({ title, description, date, location, createdBy, eventType });
     }
 
     await event.save();
@@ -50,10 +58,10 @@ async function getEventById(req, res) {
 
 async function updateEvent(req, res) {
   const { eventId } = req.params;
-  const { title, description, date, location, numberOfQuestions, difficulty, timeLimit, questions } = req.body;
+  const updateData = req.body;
 
   try {
-    const event = await Event.findByIdAndUpdate(eventId, { title, description, date, location, numberOfQuestions, difficulty, timeLimit, questions }, { new: true });
+    const event = await Event.findByIdAndUpdate(eventId, updateData, { new: true });
     if (!event) {
       return res.status(404).json({ message: 'Event not found' });
     }

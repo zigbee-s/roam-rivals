@@ -1,14 +1,13 @@
+// backend/server.js
 const express = require('express');
 const cors = require('cors');
 const connectDB = require('./db/db');
 const authRoutes = require('./routes/authRoutes');
 const userRoutes = require('./routes/userRoutes');
 const eventRoutes = require('./routes/eventRoutes');
+const photoRoutes = require('./modules/photography/routes/photoRoutes'); // Import the modular photography routes
 const rateLimit = require('express-rate-limit');
 const app = express();
-
-// Enable trust proxy
-// app.set('trust proxy', true);
 
 // Middleware
 app.use(express.json());
@@ -27,6 +26,7 @@ app.use(limiter);
 app.use('/auth', authRoutes);
 app.use('/user', userRoutes);
 app.use('/events', eventRoutes);
+app.use('/photos', photoRoutes); // Add the modular photography routes
 
 // Error handling middleware
 app.use((err, req, res, next) => {
