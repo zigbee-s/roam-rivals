@@ -9,6 +9,7 @@ const eventSchema = new Schema({
   location: { type: String, required: true },
   createdBy: { type: Schema.Types.ObjectId, ref: 'User', required: true },
   eventType: { type: String, required: true, enum: ['general', 'quiz', 'photography'] },
+  participants: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
 }, { discriminatorKey: 'eventType' });
 
 const Event = mongoose.model('Event', eventSchema);

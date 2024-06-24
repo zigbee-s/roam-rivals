@@ -100,12 +100,23 @@ async function registerEvent(req, res) {
       return res.status(404).json({ message: 'User not found' });
     }
 
+    // Ensure events and participants arrays are defined
+    if (!Array.isArray(user.events)) {
+      user.events = [];
+    }
+    if (!Array.isArray(event.participants)) {
+      event.participants = [];
+    }
+
     if (user.events.includes(eventId)) {
       return res.status(400).json({ message: 'User already registered for this event' });
     }
 
     user.events.push(eventId);
+    event.participants.push(userId); // Add user to event participants
+
     await user.save();
+    await event.save(); // Save the updated event
 
     await sendEventRegistrationEmail(user.email, event.title);
 
@@ -114,5 +125,4 @@ async function registerEvent(req, res) {
     res.status(500).json({ message: 'Failed to register for event', error: error.message });
   }
 }
-
 module.exports = { createEvent, getEvents, getEventById, updateEvent, deleteEvent, registerEvent };
