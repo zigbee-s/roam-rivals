@@ -1,14 +1,15 @@
-// backend/modules/photography/routes/photoRoutes.js
+// backend/routes/photoRoutes.js
 const express = require('express');
-const { uploadPhoto, getAllPhotos, selectWinner } = require('../controllers/photoController');
+const { uploadPhoto, getAllPhotos, getPhoto, deletePhoto } = require('../controllers/photoController');
 const { authMiddleware } = require('../../../middlewares/authMiddleware');
-const roleMiddleware = require('../../../middlewares/roleMiddleware');
-const upload = require('../../../middlewares/fileUploadMiddleware'); // Assuming you have a file upload middleware
+const multer = require('multer');
+const upload = require('../../../middlewares/fileUploadMiddleware');
 
 const router = express.Router();
 
 router.post('/upload', authMiddleware, upload.single('photo'), uploadPhoto);
-router.get('/:eventId/photos', authMiddleware, getAllPhotos);
-router.post('/select-winner', authMiddleware, roleMiddleware(['admin']), selectWinner);
+router.get('/', authMiddleware, getAllPhotos);
+router.get('/:photoId', authMiddleware, getPhoto);
+router.delete('/:photoId', authMiddleware, deletePhoto);
 
 module.exports = router;

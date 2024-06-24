@@ -5,7 +5,7 @@ const connectDB = require('./db/db');
 const authRoutes = require('./routes/authRoutes');
 const userRoutes = require('./routes/userRoutes');
 const eventRoutes = require('./routes/eventRoutes');
-const photoRoutes = require('./modules/photography/routes/photoRoutes'); // Import the modular photography routes
+const photoRoutes = require('./modules/photography/routes/photoRoutes');  // Ensure this line is present
 const rateLimit = require('express-rate-limit');
 const app = express();
 
@@ -26,7 +26,7 @@ app.use(limiter);
 app.use('/auth', authRoutes);
 app.use('/user', userRoutes);
 app.use('/events', eventRoutes);
-app.use('/photos', photoRoutes); // Add the modular photography routes
+app.use('/photos', photoRoutes);  // Ensure this line is present
 
 // Error handling middleware
 app.use((err, req, res, next) => {

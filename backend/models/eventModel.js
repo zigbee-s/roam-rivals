@@ -18,7 +18,7 @@ const Event = mongoose.model('Event', eventSchema);
 const quizEventSchema = new Schema({
   numberOfQuestions: { type: Number, required: true },
   difficulty: { type: String, required: true },
-  timeLimit: { type: Number, required: true }, // Time in minutes
+  timeLimit: { type: Number, required: true },
   questions: [{
     question: { type: String, required: true },
     options: [{ type: String, required: true }],
@@ -33,6 +33,7 @@ const photographyEventSchema = new Schema({
   maxPhotos: { type: Number, required: true },
   themes: [{ type: String, required: true }],
   submissionDeadline: { type: Date, required: true },
+  photos: [{ type: Schema.Types.ObjectId, ref: 'Photo' }]  // Add this line to store references to photos
 });
 
 const PhotographyEvent = Event.discriminator('photography', photographyEventSchema);

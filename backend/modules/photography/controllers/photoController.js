@@ -1,54 +1,71 @@
-// backend/modules/photography/controllers/photoController.js
+// backend/controllers/photoController.js
 const Photo = require('../models/photoModel');
-const Event = require('../../../models/eventModel');
+const { PhotographyEvent } = require('../../../models/eventModel');
 
 async function uploadPhoto(req, res) {
-  const { title, description, eventId } = req.body;
-  const uploadedBy = req.user.userId;
-  const imageUrl = req.file.path; // Assuming you're using a file upload middleware
+  const { eventId } = req.body;
+  const userId = req.user.userId;
+  const photoUrl = req.file.path;  // Assume you're using multer for file uploads
 
   try {
-    const event = await Event.findById(eventId);
+    const event = await PhotographyEvent.findById(eventId);
     if (!event) {
       return res.status(404).json({ message: 'Event not found' });
     }
 
-    const photo = new Photo({ title, description, imageUrl, uploadedBy, event: eventId });
+    if (!event.participants.includes(userId)) {
+      return res.status(403).json({ message: 'You are not registered for this event' });
+    }
+
+    const photo = new Photo({ url: photoUrl, uploadedBy: userId, eventId });
     await photo.save();
 
-    res.status(201).json(photo);
+    event.photos.push(photo._id);
+    await event.save();
+
+    res.status(200).json({ message: 'Photo uploaded successfully', photo });
   } catch (error) {
     res.status(500).json({ message: 'Failed to upload photo', error: error.message });
   }
 }
 
 async function getAllPhotos(req, res) {
-  const { eventId } = req.params;
-
   try {
-    const photos = await Photo.find({ event: eventId }).populate('uploadedBy', 'name email');
+    const photos = await Photo.find()
+      .populate({ path: 'uploadedBy', select: 'name email' })
+      .populate({ path: 'eventId', select: 'title' });
     res.status(200).json(photos);
   } catch (error) {
     res.status(500).json({ message: 'Failed to fetch photos', error: error.message });
   }
 }
 
-async function selectWinner(req, res) {
-  const { photoId } = req.body;
-
+async function getPhoto(req, res) {
+  const { photoId } = req.params;
   try {
-    const photo = await Photo.findById(photoId).populate('uploadedBy', 'name email');
+    const photo = await Photo.findById(photoId)
+      .populate({ path: 'uploadedBy', select: 'name email' })
+      .populate({ path: 'eventId', select: 'title' });
     if (!photo) {
       return res.status(404).json({ message: 'Photo not found' });
     }
-
-    // Notify the user (assuming you have a notification service)
-    // await sendNotification(photo.uploadedBy.email, 'You have won the photography event!', 'Congratulations!');
-
-    res.status(200).json({ message: 'Winner selected', photo });
+    res.status(200).json(photo);
   } catch (error) {
-    res.status(500).json({ message: 'Failed to select winner', error: error.message });
+    res.status (500).json({ message: 'Failed to fetch photo', error: error.message });
   }
 }
 
-module.exports = { uploadPhoto, getAllPhotos, selectWinner };
+async function deletePhoto(req, res) {
+  const { photoId } = req.params;
+  try {
+    const photo = await Photo.findByIdAndDelete(photoId);
+    if (!photo) {
+      return res.status(404).json({ message: 'Photo not found' });
+    }
+    res.status(200).json({ message: 'Photo deleted successfully' });
+  } catch (error) {
+    res.status(500).json({ message: 'Failed to delete photo', error: error.message });
+  }
+}
+
+module.exports = { uploadPhoto, getAllPhotos, getPhoto, deletePhoto };
