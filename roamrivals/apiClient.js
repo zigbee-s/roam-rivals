@@ -4,15 +4,20 @@ import { getToken, saveToken, deleteToken } from './tokenStorage';
 import { navigate } from './navigationRef';
 import { v4 as uuidv4 } from 'uuid';
 
+
 const devURL = 'http://localhost:3000';
 const prodURL = 'https://roam-rivals.onrender.com';
-const baseURL = process.env.NODE_ENV === 'production' ? prodURL : devURL;
+let baseURL = process.env.NODE_ENV === 'production' ? prodURL : devURL;
 
+console.log("sdsadsa: " + prodURL)
+
+baseURL = prodURL
 const apiClient = axios.create({
   baseURL,
 });
 
 apiClient.interceptors.request.use(async (config) => {
+  console.log(prodURL)
   const token = await getToken();
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
@@ -23,6 +28,7 @@ apiClient.interceptors.request.use(async (config) => {
     config.headers['Idempotency-Key'] = uuidv4();
   }
 
+  console.log(config)
   return config;
 });
 

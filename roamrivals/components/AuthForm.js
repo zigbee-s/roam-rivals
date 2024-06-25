@@ -1,65 +1,49 @@
-// ./components/AuthForm.js
+// Example of AuthForm component
 import React, { useState } from 'react';
-import { View, TextInput, Button, Text, StyleSheet } from 'react-native';
+import { View, Text, TextInput, Button, StyleSheet } from 'react-native';
 
-const AuthForm = ({ buttonText, onSubmit, errorMessage, includeName }) => {
+const AuthForm = ({ headerText, errorMessage, onSubmit, submitButtonText }) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [name, setName] = useState('');
-
-  const handlePress = () => {
-    if (includeName) {
-      onSubmit({ name, email, password });
-    } else {
-      onSubmit({ email, password });
-    }
-  };
 
   return (
-    <View style={styles.container}>
-      {includeName && (
-        <TextInput
-          style={styles.input}
-          placeholder="Name"
-          value={name}
-          onChangeText={setName}
-        />
-      )}
+    <View>
+      <Text style={styles.header}>{headerText}</Text>
       <TextInput
-        style={styles.input}
         placeholder="Email"
         value={email}
         onChangeText={setEmail}
         autoCapitalize="none"
+        autoCorrect={false}
+        style={styles.input}
       />
       <TextInput
-        style={styles.input}
+        secureTextEntry
         placeholder="Password"
         value={password}
         onChangeText={setPassword}
-        secureTextEntry
         autoCapitalize="none"
+        autoCorrect={false}
+        style={styles.input}
       />
       {errorMessage ? <Text style={styles.error}>{errorMessage}</Text> : null}
-      <Button title={buttonText} onPress={handlePress} />
+      <Button title={submitButtonText} onPress={() => onSubmit({ email, password })} />
     </View>
   );
 };
 
 const styles = StyleSheet.create({
-  container: {
-    padding: 20,
+  header: {
+    fontSize: 20,
+    marginBottom: 10,
   },
   input: {
-    height: 40,
-    borderColor: 'gray',
-    borderWidth: 1,
-    marginBottom: 10,
-    paddingHorizontal: 10,
+    borderBottomWidth: 1,
+    marginBottom: 15,
+    padding: 5,
   },
   error: {
     color: 'red',
-    marginBottom: 10,
   },
 });
 

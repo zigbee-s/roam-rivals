@@ -1,9 +1,8 @@
-// roamrivals/screens/LoginScreen.js
 import React, { useState } from 'react';
 import { View, StyleSheet, ActivityIndicator, TextInput, Button, Text } from 'react-native';
-import AuthForm from '../components/AuthForm';
-import apiClient from '../apiClient';
-import { saveToken } from '../tokenStorage';
+import apiClient from '../apiClient'; // Adjust the import as necessary
+import { saveToken } from '../tokenStorage'; // Adjust the import as necessary
+import AuthForm from '../components/AuthForm'; // Adjust the import as necessary
 
 const LoginScreen = ({ navigation, setUserRoles }) => {
   const [otpSent, setOtpSent] = useState(false);
@@ -16,6 +15,7 @@ const LoginScreen = ({ navigation, setUserRoles }) => {
     setLoading(true);
     try {
       const response = await apiClient.post('/auth/login', { email, password });
+      console.log("herer")
       setEmail(email);
       setOtpSent(true);
       setLoading(false);
@@ -72,6 +72,7 @@ const LoginScreen = ({ navigation, setUserRoles }) => {
           errorMessage={errorMessage}
           onSubmit={handleLogin}
           submitButtonText="Log In"
+          buttonText="submit"
         />
       )}
     </View>
