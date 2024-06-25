@@ -1,6 +1,7 @@
 // roamrivals/screens/CreateEventScreen.js
 import React, { useState } from 'react';
-import { View, TextInput, Button, StyleSheet, Alert, ActivityIndicator, Picker, ScrollView, Text } from 'react-native';
+import { Picker } from '@react-native-picker/picker';
+import { View, TextInput, Button, StyleSheet, Alert, ActivityIndicator, ScrollView, Text } from 'react-native';
 import apiClient from '../apiClient';
 
 const CreateEventScreen = ({ navigation }) => {
