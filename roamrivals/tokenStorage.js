@@ -5,13 +5,38 @@ import { Platform } from 'react-native';
 
 const Storage = {
   getItem: async (key) => {
-    return Platform.OS === 'web' ? AsyncStorage.getItem(key) : SecureStore.getItemAsync(key);
+    try {
+      if (Platform.OS === 'web') {
+        return await AsyncStorage.getItem(key);
+      } else {
+        return await SecureStore.getItemAsync(key);
+      }
+    } catch (error) {
+      console.error('Error getting item from storage:', error);
+      return null;
+    }
   },
   setItem: async (key, value) => {
-    return Platform.OS === 'web' ? AsyncStorage.setItem(key, value) : SecureStore.setItemAsync(key, value);
+    try {
+      if (Platform.OS === 'web') {
+        await AsyncStorage.setItem(key, value);
+      } else {
+        await SecureStore.setItemAsync(key, value);
+      }
+    } catch (error) {
+      console.error('Error setting item in storage:', error);
+    }
   },
   deleteItem: async (key) => {
-    return Platform.OS === 'web' ? AsyncStorage.removeItem(key) : SecureStore.deleteItemAsync(key);
+    try {
+      if (Platform.OS === 'web') {
+        await AsyncStorage.removeItem(key);
+      } else {
+        await SecureStore.deleteItemAsync(key);
+      }
+    } catch (error) {
+      console.error('Error deleting item from storage:', error);
+    }
   },
 };
 
