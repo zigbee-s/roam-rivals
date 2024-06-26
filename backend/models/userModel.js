@@ -4,10 +4,14 @@ const bcrypt = require('bcrypt');
 
 const userSchema = new mongoose.Schema({
   name: { type: String, required: true },
+  username: { type: String, required: true, unique: true }, // Added username
   email: { type: String, required: true, unique: true },
   password: { type: String, required: true }, // Hashed password
+  age: { type: Number, required: true }, // Added age
   roles: [{ type: String, enum: ['user', 'admin'], default: 'user' }], // Array of roles
-  events: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Event' }] // Array of event IDs
+  events: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Event' }], // Array of event IDs
+  createdAt: { type: Date, default: Date.now },
+  updatedAt: { type: Date, default: Date.now },
 });
 
 // Hash password before saving

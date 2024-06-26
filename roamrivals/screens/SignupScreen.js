@@ -8,13 +8,16 @@ import { saveToken } from '../tokenStorage';
 
 const validationSchema = yup.object().shape({
   name: yup.string().required('Name is required'),
+  username: yup.string().required('Username is required'),
   email: yup.string().email('Invalid email').required('Email is required'),
   password: yup.string().min(6, 'Password must be at least 6 characters').required('Password is required'),
+  confirm_password: yup.string().oneOf([yup.ref('password'), null], 'Passwords must match').required('Confirm password is required'),
+  age: yup.number().required('Age is required').positive().integer(),
 });
 
 const SignupScreen = ({ navigation }) => {
   const [otpSent, setOtpSent] = useState(false);
-  const [signupData, setSignupData] = useState({ name: '', email: '', password: '' });
+  const [signupData, setSignupData] = useState({ name: '', username: '', email: '', password: '', confirm_password: '', age: '' });
   const [otp, setOtp] = useState('');
   const [loading, setLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
@@ -72,7 +75,7 @@ const SignupScreen = ({ navigation }) => {
         </View>
       ) : (
         <Formik
-          initialValues={{ name: '', email: '', password: '' }}
+          initialValues={{ name: '', username: '', email: '', password: '', confirm_password: '', age: '' }}
           validationSchema={validationSchema}
           onSubmit={handleSignup}
         >
@@ -86,6 +89,14 @@ const SignupScreen = ({ navigation }) => {
                 value={values.name}
               />
               {touched.name && errors.name && <Text style={styles.errorText}>{errors.name}</Text>}
+              <TextInput
+                style={styles.input}
+                placeholder="Username"
+                onChangeText={handleChange('username')}
+                onBlur={handleBlur('username')}
+                value={values.username}
+              />
+              {touched.username && errors.username && <Text style={styles.errorText}>{errors.username}</Text>}
               <TextInput
                 style={styles.input}
                 placeholder="Email"
@@ -103,6 +114,24 @@ const SignupScreen = ({ navigation }) => {
                 secureTextEntry
               />
               {touched.password && errors.password && <Text style={styles.errorText}>{errors.password}</Text>}
+              <TextInput
+                style={styles.input}
+                placeholder="Confirm Password"
+                onChangeText={handleChange('confirm_password')}
+                onBlur={handleBlur('confirm_password')}
+                value={values.confirm_password}
+                secureTextEntry
+              />
+              {touched.confirm_password && errors.confirm_password && <Text style={styles.errorText}>{errors.confirm_password}</Text>}
+              <TextInput
+                style={styles.input}
+                placeholder="Age"
+                onChangeText={handleChange('age')}
+                onBlur={handleBlur('age')}
+                value={values.age}
+                keyboardType="numeric"
+              />
+              {touched.age && errors.age && <Text style={styles.errorText}>{errors.age}</Text>}
               {errorMessage ? <Text style={styles.errorText}>{errorMessage}</Text> : null}
               <Button onPress={handleSubmit} title="Sign Up" disabled={isSubmitting} />
             </View>

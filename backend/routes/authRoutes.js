@@ -1,6 +1,5 @@
-// backend/routes/authRoutes.js
 const express = require('express');
-const { signup, login, verifyOtp, verifyOtpForLogin, refreshToken } = require('../controllers/authController');
+const { signup, login, verifyOtp, verifyOtpForLogin, verifyOtpForForgotPassword, refreshToken, forgotPassword, resetPassword } = require('../controllers/authController');
 const { validateSignupInput, validateLoginInput } = require('../middlewares/userValidation');
 const createRateLimiter = require('../middlewares/rateLimiter');
 const idempotencyMiddleware = require('../middlewares/idempotencyMiddleware');
@@ -15,6 +14,9 @@ router.post('/signup', signupLimiter, validateSignupInput, idempotencyMiddleware
 router.post('/login', loginLimiter, validateLoginInput, idempotencyMiddleware, login);
 router.post('/verify-otp', idempotencyMiddleware, verifyOtp);
 router.post('/verify-otp-login', idempotencyMiddleware, verifyOtpForLogin);
+router.post('/verify-otp-forgot-password', idempotencyMiddleware, verifyOtpForForgotPassword);
 router.post('/refresh-token', idempotencyMiddleware, refreshToken);
+router.post('/forgot-password', forgotPassword);
+router.post('/reset-password', resetPassword);
 
 module.exports = router;

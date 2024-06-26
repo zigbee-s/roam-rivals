@@ -13,5 +13,6 @@ module.exports = {
   MONGODB_URI: process.env.MONGODB_URI,
   JWT_SECRET: process.env.JWT_SECRET,
   REFRESH_TOKEN_SECRET: process.env.REFRESH_TOKEN_SECRET,
-  SCHOOL_DOMAINS: schoolDomains
+  SCHOOL_DOMAINS: schoolDomains,
+  TEMPORARY_TOKEN_SECRET: process.env.TEMPORARY_TOKEN_SECRET
 };

@@ -1,14 +1,15 @@
-// ProfileScreen.js
+// roamrivals/screens/ProfileScreen.js
 import React, { useEffect, useState } from 'react';
-import { View, Text, Button, StyleSheet, ScrollView } from 'react-native';
+import { View, Text, Button, StyleSheet, ScrollView, ActivityIndicator } from 'react-native';
 import { deleteToken, getToken } from '../tokenStorage';
 import apiClient from '../apiClient';
 
 const ProfileScreen = ({ navigation }) => {
   const [userInfo, setUserInfo] = useState(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    let isMounted = true; // Add this to track the mounted state
+    let isMounted = true;
 
     const fetchUserInfo = async () => {
       try {
@@ -21,14 +22,18 @@ const ProfileScreen = ({ navigation }) => {
         }
       } catch (error) {
         console.log('Failed to fetch user info', error);
+      } finally {
+        if (isMounted) {
+          setLoading(false);
+        }
       }
     };
 
     fetchUserInfo();
 
     return () => {
-      isMounted = false; // Set isMounted to false when the component is unmounted
-      setUserInfo(null); // Reset userInfo state when the component is unmounted
+      isMounted = false;
+      setUserInfo(null);
     };
   }, []);
 
@@ -38,8 +43,12 @@ const ProfileScreen = ({ navigation }) => {
     navigation.navigate('Home');
   };
 
+  if (loading) {
+    return <ActivityIndicator size="large" color="#0000ff" />;
+  }
+
   if (!userInfo) {
-    return <Text>Loading...</Text>;
+    return <Text>Failed to load user info</Text>;
   }
 
   return (
@@ -48,12 +57,24 @@ const ProfileScreen = ({ navigation }) => {
         <Text style={styles.title}>Profile</Text>
         <Text style={styles.label}>Name:</Text>
         <Text style={styles.info}>{userInfo.name}</Text>
+        <Text style={styles.label}>Username:</Text>
+        <Text style={styles.info}>{userInfo.username}</Text>
         <Text style={styles.label}>Email:</Text>
         <Text style={styles.info}>{userInfo.email}</Text>
-        <Text style={styles.label}>Registered Events:</Text>
-        {userInfo.events.map((event) => (
-          <Text key={event._id} style={styles.event}>- {event.title}</Text>
+        <Text style={styles.label}>Age:</Text>
+        <Text style={styles.info}>{userInfo.age}</Text>
+        <Text style={styles.label}>Roles:</Text>
+        {userInfo.roles.map((role, index) => (
+          <Text key={index} style={styles.info}>{role}</Text>
         ))}
+        <Text style={styles.label}>Registered Events:</Text>
+        {userInfo.events && userInfo.events.length > 0 ? (
+          userInfo.events.map((event) => (
+            <Text key={event._id} style={styles.event}>- {event.title}</Text>
+          ))
+        ) : (
+          <Text style={styles.info}>No registered events</Text>
+        )}
         <Button title="Logout" onPress={handleLogout} />
       </View>
     </ScrollView>
