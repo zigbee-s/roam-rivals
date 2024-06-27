@@ -174,7 +174,7 @@ async function verifyOtpForForgotPassword(req, res) {
 // New forgotPassword function
 async function forgotPassword(req, res) {
   const { email } = req.body;
-
+  console.log("forgot password triggered with email: ", email)
   try {
     const user = await User.findOne({ email });
     if (!user) {
@@ -182,6 +182,7 @@ async function forgotPassword(req, res) {
     }
 
     const otp = generateOtp();
+    console.log("otp generated: ", otp)
     await OTP.create({ email, otp });
     await sendOtpEmail(email, otp);
 
