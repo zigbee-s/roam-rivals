@@ -1,4 +1,3 @@
-// middlewares/userValidation.js
 const { body, validationResult } = require('express-validator');
 const User = require('../models/userModel');
 const { SCHOOL_DOMAINS } = require('../config/config');
@@ -10,6 +9,11 @@ const validateSignupInput = [
     .notEmpty()
     .isString()
     .withMessage('Name is required'),
+  body('username')
+    .trim()
+    .notEmpty()
+    .isString()
+    .withMessage('Username is required'),
   body('email')
     .trim()
     .notEmpty()
@@ -51,7 +55,12 @@ const validateLoginInput = [
     .notEmpty()
     .isEmail()
     .withMessage('Valid email is required'),
+  body('useOtp')
+    .optional()
+    .isBoolean()
+    .withMessage('useOtp must be a boolean'),
   body('password')
+    .if(body('useOtp').not().exists())
     .trim()
     .notEmpty()
     .withMessage('Password is required'),
