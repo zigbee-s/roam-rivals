@@ -48,6 +48,7 @@ async function signup(req, res) {
 async function login(req, res) {
   const { email, password, useOtp } = req.body;
   const idempotencyKey = req.idempotencyKey;
+  console.log("Loggin triggered")
 
   try {
     const user = await User.findOne({ email });
@@ -56,7 +57,9 @@ async function login(req, res) {
     }
 
     if (useOtp) {
+      console.log('use otp trrigered')
       const otp = generateOtp();
+      console.log(email, otp)
       await OTP.create({ email, otp });
       await sendOtpEmail(email, otp);
 
@@ -69,6 +72,7 @@ async function login(req, res) {
       return res.status(200).json(response);
     }
 
+    // Password route
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) {
       return res.status(400).json({ message: 'Invalid email or password' });
@@ -123,7 +127,8 @@ async function verifyOtp(req, res) {
 // Verify OTP for login function
 async function verifyOtpForLogin(req, res) {
   const { email, otp } = req.body;
-
+  console.log("Verify otp for login triggred")
+  console.log(email, otp)
   try {
     const otpRecord = await OTP.findOne({ email, otp });
     if (!otpRecord) {
