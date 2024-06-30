@@ -1,6 +1,8 @@
 // src/screens/EventScreen.js
-import React, { useState, useEffect, useContext } from 'react';
+// src/screens/EventScreen.js
+import React, { useState, useEffect, useContext, useCallback } from 'react';
 import { View, Text, FlatList, StyleSheet, ActivityIndicator, Button, Alert } from 'react-native';
+import { useFocusEffect } from '@react-navigation/native';
 import apiClient from '../api/apiClient';
 import { ErrorContext } from '../context/ErrorContext';
 import { UserContext } from '../context/UserContext';
@@ -30,9 +32,11 @@ const EventScreen = ({ navigation }) => {
     }
   };
 
-  useEffect(() => {
-    fetchEvents();
-  }, []);
+  useFocusEffect(
+    useCallback(() => {
+      fetchEvents();
+    }, [])
+  );
 
   const handleRegister = async (eventId) => {
     setLoading(true);

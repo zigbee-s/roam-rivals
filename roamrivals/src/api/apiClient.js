@@ -5,7 +5,7 @@ import { navigationRef } from './navigationRef';
 import uuid from 'react-native-uuid';
 
 const devURL = 'http://localhost:3000';
-const uatURL = 'http://192.168.1.5:3000';
+const uatURL = 'http://192.168.1.7:3000';
 const prodURL = 'https://roam-rivals.onrender.com';
 
 let baseURL = process.env.NODE_ENV === 'production' ? uatURL : devURL;
@@ -15,7 +15,7 @@ console.log("Base URL: " + baseURL);
 
 const apiClient = axios.create({
   baseURL,
-  timeout: 10000, // Set a 10-second timeout for requests
+  timeout: 20000, // Set a 20-second timeout for requests
 });
 
 apiClient.interceptors.request.use(async (config) => {

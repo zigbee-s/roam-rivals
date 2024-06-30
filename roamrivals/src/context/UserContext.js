@@ -1,5 +1,5 @@
 // src/context/UserContext.js
-import React, { createContext, useState, useEffect } from 'react';
+import React, { createContext, useState, useEffect, useCallback } from 'react';
 import { getToken, saveToken, deleteToken } from '../api/tokenStorage';
 import apiClient from '../api/apiClient';
 
@@ -36,7 +36,7 @@ export const UserProvider = ({ children }) => {
     fetchUserInfo();
   }, []);
 
-  const updateUserProfile = async () => {
+  const updateUserProfile = useCallback(async () => {
     const token = await getToken();
     if (token) {
       const response = await apiClient.get('/user/profile', {
@@ -45,7 +45,7 @@ export const UserProvider = ({ children }) => {
       setUser(response.data);
       await saveToken(JSON.stringify(response.data), 'user');
     }
-  };
+  }, []);
 
   return (
     <UserContext.Provider value={{ user, setUser, loading, setLoading, updateUserProfile }}>
