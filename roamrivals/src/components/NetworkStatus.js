@@ -6,10 +6,18 @@ import { ErrorContext } from '../context/ErrorContext';
 const NetworkStatus = ({ children }) => {
   const { setError } = useContext(ErrorContext);
 
+  const checkNetworkStatus = () => {
+    NetInfo.fetch().then(state => {
+      if (!state.isConnected) {
+        setError('Network issue, please check your connection.');
+      } else {
+        setError(null);
+      }
+    });
+  };
+
   useEffect(() => {
-    console.log('NetworkStatus mounted');
     const unsubscribe = NetInfo.addEventListener(state => {
-      console.log('Network state changed:', state);
       if (!state.isConnected) {
         setError('Network issue, please check your connection.');
       } else {
@@ -18,7 +26,6 @@ const NetworkStatus = ({ children }) => {
     });
 
     return () => {
-      console.log('NetworkStatus unmounted');
       unsubscribe();
     };
   }, [setError]);
@@ -27,3 +34,4 @@ const NetworkStatus = ({ children }) => {
 };
 
 export default NetworkStatus;
+

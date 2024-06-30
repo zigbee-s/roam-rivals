@@ -16,7 +16,9 @@ const App = () => {
     <UserProvider>
       <ErrorProvider>
         <ErrorBoundary>
+          <NetworkStatus>
             <AppNavigator />
+          </NetworkStatus>
         </ErrorBoundary>
       </ErrorProvider>
     </UserProvider>

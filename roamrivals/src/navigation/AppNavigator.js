@@ -14,16 +14,16 @@ import apiClient from '../api/apiClient';
 import { navigationRef } from '../api/navigationRef';
 import ErrorScreen from '../components/ErrorScreen';
 import { ErrorContext } from '../context/ErrorContext';
+import NetworkStatus from '../components/NetworkStatus';
 
 const Stack = createNativeStackNavigator();
 
 const AppNavigator = () => {
   const [initialRoute, setInitialRoute] = useState(null);
   const [userRoles, setUserRoles] = useState([]);
-  const { error } = useContext(ErrorContext);
+  const { error, setError } = useContext(ErrorContext);
 
   useEffect(() => {
-    console.log('AppNavigator mounted');
     const checkToken = async () => {
       const token = await getToken();
       if (token) {
@@ -46,10 +46,6 @@ const AppNavigator = () => {
     };
 
     checkToken();
-
-    return () => {
-      console.log('AppNavigator unmounted');
-    };
   }, []);
 
   const profileButton = ({ navigation }) => ({
@@ -61,6 +57,11 @@ const AppNavigator = () => {
     ),
   });
 
+  const handleRetry = () => {
+    setError(null);
+    window.location.reload(); // Reload the application
+  };
+
   if (initialRoute === null) {
     return (
       <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
@@ -71,23 +72,25 @@ const AppNavigator = () => {
 
   return (
     <NavigationContainer ref={navigationRef}>
-      {error ? (
-        <ErrorScreen onRetry={() => window.location.reload()} />
-      ) : (
-        <Stack.Navigator initialRouteName={initialRoute}>
-          <Stack.Screen name="Home" component={HomeScreen} />
-          <Stack.Screen name="Signup" component={SignupScreen} />
-          <Stack.Screen name="Login">
-            {(props) => <LoginScreen {...props} setUserRoles={setUserRoles} />}
-          </Stack.Screen>
-          <Stack.Screen name="Profile" component={ProfileScreen} options={profileButton} />
-          <Stack.Screen name="Events" options={profileButton}>
-            {(props) => <EventScreen {...props} userRoles={userRoles} />}
-          </Stack.Screen>
-          <Stack.Screen name="CreateEvent" component={CreateEventScreen} options={profileButton} />
-          <Stack.Screen name="AddQuestions" component={AddQuestionsScreen} />
-        </Stack.Navigator>
-      )}
+      <NetworkStatus>
+        {error ? (
+          <ErrorScreen onRetry={handleRetry} />
+        ) : (
+          <Stack.Navigator initialRouteName={initialRoute}>
+            <Stack.Screen name="Home" component={HomeScreen} />
+            <Stack.Screen name="Signup" component={SignupScreen} />
+            <Stack.Screen name="Login">
+              {(props) => <LoginScreen {...props} setUserRoles={setUserRoles} />}
+            </Stack.Screen>
+            <Stack.Screen name="Profile" component={ProfileScreen} options={profileButton} />
+            <Stack.Screen name="Events" options={profileButton}>
+              {(props) => <EventScreen {...props} userRoles={userRoles} />}
+            </Stack.Screen>
+            <Stack.Screen name="CreateEvent" component={CreateEventScreen} options={profileButton} />
+            <Stack.Screen name="AddQuestions" component={AddQuestionsScreen} />
+          </Stack.Navigator>
+        )}
+      </NetworkStatus>
     </NavigationContainer>
   );
 };
