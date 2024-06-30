@@ -1,0 +1,11 @@
+{"level":"info","message":"Server is running on port 3000","timestamp":"2024-06-30T12:57:35.103Z"}
+2024-06-30T12:59:16.618Z [[32minfo[39m]: Server is running on port 3000 
+2024-06-30T13:02:26.428Z [[32minfo[39m]: Server is running on port 3000 
+2024-06-30T13:03:29.626Z [[32minfo[39m]: Server is running on port 3000 
+2024-06-30T13:04:00.350Z [[32minfo[39m]: Server is running on port 3000 
+2024-06-30T13:04:57.315Z [[32minfo[39m]: Server is running on port 3000 
+2024-06-30T13:06:23.740Z [[32minfo[39m]: Server is running on port 3000 
+2024-06-30T13:06:55.355Z [[32minfo[39m]: Signup OTP sent to email: gauraangsharma58@gmail.com 
+2024-06-30T13:07:33.240Z [[32minfo[39m]: User signed up with email: gauraangsharma58@gmail.com 
+2024-06-30T13:09:43.832Z [[32minfo[39m]: User logged in: gauraangsharma58@gmail.com 
+2024-06-30T13:09:57.256Z [[32minfo[39m]: Event created: 66815925ee5cebb6a5ddd166 by user: 66815894ee5cebb6a5ddd153 

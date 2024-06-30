@@ -1,12 +1,13 @@
 // backend/controllers/authController.js
 const User = require('../models/userModel');
 const OTP = require('../models/otpModel');
-const TemporaryToken = require('../models/temporaryTokenModel'); // New model for temporary tokens
+const TemporaryToken = require('../models/temporaryTokenModel');
 const bcrypt = require('bcrypt');
 const { generateToken, verifyToken, generateTemporaryToken } = require('../utils/tokenUtils');
 const { sendOtpEmail } = require('../utils/emailService');
 const { generateOtp } = require('../utils/otpUtils');
 const IdempotencyKey = require('../models/idempotencyKeyModel');
+const logger = require('../logger');
 
 // Updated signup function
 async function signup(req, res) {
@@ -14,17 +15,20 @@ async function signup(req, res) {
   const idempotencyKey = req.idempotencyKey;
 
   if (password !== confirm_password) {
+    logger.warn('Signup attempt with non-matching passwords');
     return res.status(400).json({ message: 'Passwords do not match' });
   }
 
   try {
     const existingUser = await User.findOne({ email });
     if (existingUser) {
+      logger.warn(`Signup attempt with existing email: ${email}`);
       return res.status(400).json({ message: 'Email already in use' });
     }
 
     const existingUsername = await User.findOne({ username });
     if (existingUsername) {
+      logger.warn(`Signup attempt with existing username: ${username}`);
       return res.status(400).json({ message: 'Username already in use' });
     }
 
@@ -38,8 +42,10 @@ async function signup(req, res) {
     idempotencyKey.response = response;
     await idempotencyKey.save();
 
+    logger.info(`Signup OTP sent to email: ${email}`);
     res.status(201).json(response);
   } catch (error) {
+    logger.error('Signup failed', error);
     res.status(500).json({ message: 'Signup failed', error: error.message });
   }
 }
@@ -48,18 +54,16 @@ async function signup(req, res) {
 async function login(req, res) {
   const { email, password, useOtp } = req.body;
   const idempotencyKey = req.idempotencyKey;
-  console.log("Loggin triggered")
 
   try {
     const user = await User.findOne({ email });
     if (!user) {
+      logger.warn(`Login attempt with invalid email: ${email}`);
       return res.status(400).json({ message: 'Invalid email or password' });
     }
 
     if (useOtp) {
-      console.log('use otp trrigered')
       const otp = generateOtp();
-      console.log(email, otp)
       await OTP.create({ email, otp });
       await sendOtpEmail(email, otp);
 
@@ -69,12 +73,13 @@ async function login(req, res) {
       idempotencyKey.response = response;
       await idempotencyKey.save();
 
+      logger.info(`Login OTP sent to email: ${email}`);
       return res.status(200).json(response);
     }
 
-    // Password route
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) {
+      logger.warn(`Login attempt with invalid password for email: ${email}`);
       return res.status(400).json({ message: 'Invalid email or password' });
     }
 
@@ -85,8 +90,10 @@ async function login(req, res) {
     idempotencyKey.response = response;
     await idempotencyKey.save();
 
+    logger.info(`User logged in: ${email}`);
     res.status(200).json(response);
   } catch (error) {
+    logger.error('Login failed', error);
     res.status(500).json({ message: 'Login failed', error: error.message });
   }
 }
@@ -98,13 +105,12 @@ async function verifyOtp(req, res) {
   try {
     const otpRecord = await OTP.findOne({ email, otp });
     if (!otpRecord) {
+      logger.warn(`Invalid or expired OTP for email: ${email}`);
       return res.status(400).json({ message: 'Invalid or expired OTP' });
     }
 
     await OTP.deleteOne({ _id: otpRecord._id });
 
-    // const user = new User({ email, password: req.body.password, username: req.body.username, name: req.body.name, age: req.body.age });
-    
     const user = new User({
       name: req.body.name,
       username: req.body.username,
@@ -118,8 +124,10 @@ async function verifyOtp(req, res) {
 
     const { token, refreshToken } = generateToken(user);
 
+    logger.info(`User signed up with email: ${email}`);
     res.status(201).json({ token, refreshToken });
   } catch (error) {
+    logger.error('OTP verification failed', error);
     res.status(500).json({ message: 'OTP verification failed', error: error.message });
   }
 }
@@ -127,11 +135,11 @@ async function verifyOtp(req, res) {
 // Verify OTP for login function
 async function verifyOtpForLogin(req, res) {
   const { email, otp } = req.body;
-  console.log("Verify otp for login triggred")
-  console.log(email, otp)
+
   try {
     const otpRecord = await OTP.findOne({ email, otp });
     if (!otpRecord) {
+      logger.warn(`Invalid or expired OTP for login with email: ${email}`);
       return res.status(400).json({ message: 'Invalid or expired OTP' });
     }
 
@@ -139,13 +147,16 @@ async function verifyOtpForLogin(req, res) {
 
     const user = await User.findOne({ email });
     if (!user) {
+      logger.warn(`User not found for login with email: ${email}`);
       return res.status(400).json({ message: 'User not found' });
     }
 
     const { token, refreshToken } = generateToken(user);
 
+    logger.info(`User logged in with OTP: ${email}`);
     res.status(200).json({ token, refreshToken });
   } catch (error) {
+    logger.error('OTP verification for login failed', error);
     res.status(500).json({ message: 'OTP verification failed', error: error.message });
   }
 }
@@ -153,25 +164,23 @@ async function verifyOtpForLogin(req, res) {
 // Verify OTP for forgot password function
 async function verifyOtpForForgotPassword(req, res) {
   const { email, otp } = req.body;
-  console.log(email, otp);
+
   try {
     const otpRecord = await OTP.findOne({ email, otp });
     if (!otpRecord) {
+      logger.warn(`Invalid or expired OTP for forgot password with email: ${email}`);
       return res.status(400).json({ message: 'Invalid or expired OTP' });
     }
 
     await OTP.deleteOne({ _id: otpRecord._id });
 
-    // Generate a temporary token for password reset
-    console.log("Generating temporary token");
     const tempToken = generateTemporaryToken({ email });
-    console.log("Temporary token generated:", tempToken);
     await TemporaryToken.create({ token: tempToken, email });
-    console.log("Temporary token saved to database");
 
+    logger.info(`OTP verified for forgot password: ${email}`);
     res.status(200).json({ message: 'OTP verified successfully', tempToken });
   } catch (error) {
-    console.error("Error during OTP verification:", error);
+    logger.error('OTP verification for forgot password failed', error);
     res.status(500).json({ message: 'OTP verification failed', error: error.message });
   }
 }
@@ -179,20 +188,22 @@ async function verifyOtpForForgotPassword(req, res) {
 // New forgotPassword function
 async function forgotPassword(req, res) {
   const { email } = req.body;
-  console.log("forgot password triggered with email: ", email)
+
   try {
     const user = await User.findOne({ email });
     if (!user) {
+      logger.warn(`Forgot password attempt with non-existent email: ${email}`);
       return res.status(400).json({ message: 'Email not found' });
     }
 
     const otp = generateOtp();
-    console.log("otp generated: ", otp)
     await OTP.create({ email, otp });
     await sendOtpEmail(email, otp);
 
+    logger.info(`Forgot password OTP sent to email: ${email}`);
     res.status(200).json({ message: 'OTP sent to email. Please use it to reset your password.' });
   } catch (error) {
+    logger.error('Failed to send OTP for forgot password', error);
     res.status(500).json({ message: 'Failed to send OTP', error: error.message });
   }
 }
@@ -204,22 +215,25 @@ async function resetPassword(req, res) {
   try {
     const tempTokenRecord = await TemporaryToken.findOne({ token: tempToken });
     if (!tempTokenRecord) {
+      logger.warn(`Invalid or expired temporary token for password reset`);
       return res.status(400).json({ message: 'Invalid or expired token' });
     }
 
     const user = await User.findOne({ email: tempTokenRecord.email });
     if (!user) {
+      logger.warn(`User not found for password reset with email: ${tempTokenRecord.email}`);
       return res.status(400).json({ message: 'User not found' });
     }
 
     user.password = newPassword;
     await user.save();
 
-    // Delete the temporary token after successful password reset
     await TemporaryToken.deleteOne({ _id: tempTokenRecord._id });
 
+    logger.info(`Password reset successfully for email: ${tempTokenRecord.email}`);
     res.status(200).json({ message: 'Password reset successfully' });
   } catch (error) {
+    logger.error('Failed to reset password', error);
     res.status(500).json({ message: 'Failed to reset password', error: error.message });
   }
 }
@@ -232,12 +246,14 @@ async function refreshToken(req, res) {
     const decoded = verifyToken(refreshToken, process.env.REFRESH_TOKEN_SECRET);
     const user = await User.findById(decoded.id);
     if (!user) {
+      logger.warn(`Invalid refresh token`);
       return res.status(401).json({ message: 'Invalid refresh token' });
     }
 
     const newTokens = generateToken(user);
     res.status(200).json(newTokens);
   } catch (error) {
+    logger.error('Token refresh failed', error);
     res.status(401).json({ message: 'Token refresh failed', error: error.message });
   }
 }

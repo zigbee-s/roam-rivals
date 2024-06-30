@@ -5,8 +5,11 @@ const connectDB = require('./db/db');
 const authRoutes = require('./routes/authRoutes');
 const userRoutes = require('./routes/userRoutes');
 const eventRoutes = require('./routes/eventRoutes');
-const photoRoutes = require('./modules/events/photography/routes/photoRoutes');  // Ensure this line is present
 const rateLimit = require('express-rate-limit');
+const expressWinston = require('express-winston');
+const winston = require('winston'); // Add this line to import winston
+const logger = require('./logger');
+
 const app = express();
 
 // Middleware
@@ -22,16 +25,35 @@ const limiter = rateLimit({
 });
 app.use(limiter);
 
+// Request logging middleware
+app.use(expressWinston.logger({
+  transports: [
+    new winston.transports.Console(),
+    new winston.transports.File({ filename: 'logs/request.log' })
+  ],
+  format: winston.format.combine(
+    winston.format.colorize(),
+    winston.format.json()
+  ),
+  meta: true,
+  msg: "HTTP {{req.method}} {{req.url}}",
+  expressFormat: true,
+  colorize: false,
+  ignoreRoute: function (req, res) { return false; }
+}));
+
 // Routes
 app.use('/auth', authRoutes);
 app.use('/user', userRoutes);
 app.use('/events', eventRoutes);
-app.use('/photos', photoRoutes);  // Ensure this line is present
 
 // Error handling middleware
 app.use((err, req, res, next) => {
-  console.error(err.stack);
-  res.status(500).send('Something broke!');
+  logger.error(`${err.status || 500} - ${err.message} - ${req.originalUrl} - ${req.method} - ${req.ip}`);
+  res.status(err.status || 500).json({
+    status: 'error',
+    message: err.message
+  });
 });
 
 // Connect to MongoDB and start server
@@ -40,10 +62,10 @@ app.use((err, req, res, next) => {
     await connectDB();
     const PORT = process.env.PORT || 3000;
     app.listen(PORT, () => {
-      console.log(`Server is running on port ${PORT}`);
+      logger.info(`Server is running on port ${PORT}`);
     });
   } catch (error) {
-    console.error('Failed to start server', error);
+    logger.error('Failed to start server', error);
     process.exit(1);
   }
 })();
