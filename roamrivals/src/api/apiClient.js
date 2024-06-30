@@ -5,7 +5,7 @@ import { navigationRef } from './navigationRef';
 import uuid from 'react-native-uuid';
 
 const devURL = 'http://localhost:3000';
-const uatURL = 'http://192.168.1.7:3000';
+const uatURL = 'http://<ip_address>:3000';
 const prodURL = 'https://roam-rivals.onrender.com';
 
 let baseURL = process.env.NODE_ENV === 'production' ? uatURL : devURL;
