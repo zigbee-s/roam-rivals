@@ -9,3 +9,16 @@
 2024-06-30T13:07:33.240Z [[32minfo[39m]: User signed up with email: gauraangsharma58@gmail.com 
 2024-06-30T13:09:43.832Z [[32minfo[39m]: User logged in: gauraangsharma58@gmail.com 
 2024-06-30T13:09:57.256Z [[32minfo[39m]: Event created: 66815925ee5cebb6a5ddd166 by user: 66815894ee5cebb6a5ddd153 
+2024-06-30T15:20:50.587Z [[32minfo[39m]: Server is running on port 3000 
+2024-06-30T15:21:31.056Z [[32minfo[39m]: Server is running on port 3000 
+2024-06-30T15:21:44.796Z [[32minfo[39m]: Server is running on port 3000 
+2024-06-30T15:22:03.005Z [[31merror[39m]: Failed to authenticate token jwt expired 
+2024-06-30T15:22:05.261Z [[31merror[39m]: Failed to authenticate token jwt expired 
+2024-06-30T15:23:53.544Z [[32minfo[39m]: Server is running on port 3000 
+2024-06-30T15:24:07.189Z [[31merror[39m]: Failed to authenticate token jwt expired 
+2024-06-30T15:24:22.711Z [[31merror[39m]: Failed to authenticate token jwt expired 
+2024-06-30T15:24:40.060Z [[31merror[39m]: Failed to authenticate token jwt expired 
+2024-06-30T15:24:46.131Z [[31merror[39m]: Failed to authenticate token jwt expired 
+2024-06-30T15:24:47.024Z [[31merror[39m]: Failed to authenticate token jwt expired 
+2024-06-30T15:24:56.126Z [[32minfo[39m]: User logged in: gauraangsharma58@gmail.com 
+2024-06-30T15:25:02.655Z [[32minfo[39m]: User registered for event: 66815925ee5cebb6a5ddd166 

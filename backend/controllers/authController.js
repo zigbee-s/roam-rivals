@@ -251,6 +251,7 @@ async function refreshToken(req, res) {
     }
 
     const newTokens = generateToken(user);
+    looger.info(`Refresh token generated`)
     res.status(200).json(newTokens);
   } catch (error) {
     logger.error('Token refresh failed', error);
