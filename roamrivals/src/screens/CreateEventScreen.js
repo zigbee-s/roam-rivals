@@ -1,3 +1,4 @@
+//src/screens/CreateEventScreen.js
 import React, { useState } from 'react';
 import { Picker } from '@react-native-picker/picker';
 import { View, TextInput, StyleSheet, Alert, ActivityIndicator, ScrollView, Text } from 'react-native';
@@ -11,26 +12,31 @@ const validationSchema = yup.object().shape({
   description: yup.string().required('Description is required'),
   date: yup.string().required('Date is required'),
   location: yup.string().required('Location is required'),
-  numberOfQuestions: yup.number().when('eventType', {
-    is: 'quiz',
-    then: yup.number().required('Number of questions is required for quiz').positive().integer(),
-    otherwise: yup.number().nullable(),
-  }),
-  difficulty: yup.string().when('eventType', {
-    is: 'quiz',
-    then: yup.string().required('Difficulty is required for quiz'),
-    otherwise: yup.string().nullable(),
-  }),
-  timeLimit: yup.number().when('eventType', {
-    is: 'quiz',
-    then: yup.number().required('Time limit is required for quiz').positive().integer(),
-    otherwise: yup.number().nullable(),
-  }),
-  questions: yup.string().when('eventType', {
-    is: 'quiz',
-    then: yup.string().required('Questions are required for quiz'),
-    otherwise: yup.string().nullable(),
-  }),
+  eventType: yup.string().required('Event type is required'),
+  numberOfQuestions: yup.number()
+    .nullable()
+    .when('eventType', {
+      is: 'quiz',
+      then: schema => schema.required('Number of questions is required for quiz').positive().integer(),
+    }),
+  difficulty: yup.string()
+    .nullable()
+    .when('eventType', {
+      is: 'quiz',
+      then: schema => schema.required('Difficulty is required for quiz'),
+    }),
+  timeLimit: yup.number()
+    .nullable()
+    .when('eventType', {
+      is: 'quiz',
+      then: schema => schema.required('Time limit is required for quiz').positive().integer(),
+    }),
+  questions: yup.string()
+    .nullable()
+    .when('eventType', {
+      is: 'quiz',
+      then: schema => schema.required('Questions are required for quiz'),
+    }),
 });
 
 const CreateEventScreen = ({ navigation }) => {
@@ -157,6 +163,7 @@ const CreateEventScreen = ({ navigation }) => {
             >
               <Picker.Item label="General" value="general" />
               <Picker.Item label="Quiz" value="quiz" />
+              <Picker.Item label="Photography" value="photography" />
             </Picker>
             {values.eventType === 'quiz' && (
               <>
