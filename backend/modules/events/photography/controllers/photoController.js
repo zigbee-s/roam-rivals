@@ -1,6 +1,6 @@
-// backend/controllers/photoController.js
+// backend/modules/photography/controllers/photoController.js
 const Photo = require('../models/photoModel');
-const { PhotographyEvent } = require('../../../models/eventModel');
+const { PhotographyEvent } = require('../../../../models/eventModel');
 
 async function uploadPhoto(req, res) {
   const { eventId } = req.body;

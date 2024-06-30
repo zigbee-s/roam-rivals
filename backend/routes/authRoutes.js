@@ -1,3 +1,5 @@
+// backend/routes/authRoutes.js
+
 const express = require('express');
 const { signup, login, verifyOtp, verifyOtpForLogin, verifyOtpForForgotPassword, refreshToken, forgotPassword, resetPassword } = require('../controllers/authController');
 const { validateSignupInput, validateLoginInput } = require('../middlewares/userValidation');

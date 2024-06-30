@@ -1,4 +1,4 @@
-// backend/models/photoModel.js
+// backend/modules/photography/models/photoModel.js
 const mongoose = require('mongoose');
 const { Schema } = mongoose;
 

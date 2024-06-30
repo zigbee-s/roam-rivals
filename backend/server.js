@@ -5,7 +5,7 @@ const connectDB = require('./db/db');
 const authRoutes = require('./routes/authRoutes');
 const userRoutes = require('./routes/userRoutes');
 const eventRoutes = require('./routes/eventRoutes');
-const photoRoutes = require('./modules/photography/routes/photoRoutes');  // Ensure this line is present
+const photoRoutes = require('./modules/events/photography/routes/photoRoutes');  // Ensure this line is present
 const rateLimit = require('express-rate-limit');
 const app = express();
 

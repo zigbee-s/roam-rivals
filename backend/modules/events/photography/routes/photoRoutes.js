@@ -1,9 +1,9 @@
-// backend/routes/photoRoutes.js
+// backend/modules/photograohy/routes/photoRoutes.js
 const express = require('express');
 const { uploadPhoto, getAllPhotos, getPhotoById, deletePhoto } = require('../controllers/photoController');
-const { authMiddleware } = require('../../../middlewares/authMiddleware');
+const { authMiddleware } = require('../../../../middlewares/authMiddleware');
 const multer = require('multer');
-const upload = require('../../../middlewares/fileUploadMiddleware');
+const upload = require('../../../../middlewares/fileUploadMiddleware');
 
 const router = express.Router();
 
