@@ -3,7 +3,7 @@
 node_modules/
 
 # logs
-logs/
+backend/logs/
 
 # Expo
 .expo/

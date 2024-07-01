@@ -34,12 +34,12 @@ const authMiddleware = async (req, res, next) => {
     next();
   } catch (error) {
     logger.error('Failed to authenticate token', error);
-    
-    if(error.name == 'TokenExpiredError')
-      res.status(401).json({ message: 'TokenExpiredError', error: error.message });
 
-    if(error.message)
-    res.status(500).json({ message: 'Failed to authenticate token', error: error.message });
+    if (error.name === 'TokenExpiredError') {
+      return res.status(401).json({ message: 'TokenExpiredError', error: error.message });
+    }
+
+    return res.status(500).json({ message: 'Failed to authenticate token', error: error.message });
   }
 };
 

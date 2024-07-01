@@ -3,7 +3,7 @@ const User = require('../models/userModel');
 const OTP = require('../models/otpModel');
 const TemporaryToken = require('../models/temporaryTokenModel');
 const bcrypt = require('bcrypt');
-const { generateToken, verifyToken, generateTemporaryToken } = require('../utils/tokenUtils');
+const { generateToken, verifyToken, generateTemporaryToken, verifyRefreshToken } = require('../utils/tokenUtils');
 const { sendOtpEmail } = require('../utils/emailService');
 const { generateOtp } = require('../utils/otpUtils');
 const IdempotencyKey = require('../models/idempotencyKeyModel');
@@ -241,22 +241,17 @@ async function resetPassword(req, res) {
 
 // New refreshToken function
 async function refreshToken(req, res) {
-  const { token, refreshToken } = req.body;
-
+  const { refreshToken } = req.body;
+  console.log("refresh token server side: ", refreshToken)
   try {
-    const decoded = verifyToken(refreshToken, process.env.REFRESH_TOKEN_SECRET);
-    const user = await User.findById(decoded.id);
-    if (!user) {
-      logger.warn(`Invalid refresh token`);
-      return res.status(401).json({ message: 'Invalid refresh token' });
-    }
-
+    const user = await verifyRefreshToken(refreshToken);
+    console.log("User: ", user)
     const newTokens = generateToken(user);
-    looger.info(`Refresh token generated`)
-    res.status(200).json(newTokens);
+    logger.info('Refresh token generated');
+    return res.status(200).json(newTokens);
   } catch (error) {
     logger.error('Token refresh failed', error);
-    res.status(401).json({ message: 'Token refresh failed', error: error.message });
+    return res.status(401).json({ message: error.message });
   }
 }
 

@@ -1,6 +1,7 @@
 // backend/utils/tokenUtils.js
 const jwt = require('jsonwebtoken');
 const { JWT_SECRET, REFRESH_TOKEN_SECRET, TEMPORARY_TOKEN_SECRET } = require('../config/config');
+const User = require('../models/userModel');
 
 function generateToken(user) {
   const token = jwt.sign({ userId: user._id, email: user.email, roles: user.roles }, JWT_SECRET, { expiresIn: '1m' });
@@ -21,4 +22,17 @@ function generateTemporaryToken(payload) {
   }
 }
 
-module.exports = { generateToken, verifyToken, generateTemporaryToken };
+async function verifyRefreshToken(refreshToken) {
+  try {
+    const decoded = verifyToken(refreshToken, REFRESH_TOKEN_SECRET);
+    const user = await User.findById(decoded.userId);
+    if (!user) {
+      throw new Error('Invalid refresh token');
+    }
+    return user;
+  } catch (error) {
+    throw new Error('Token refresh failed: ' + error.message);
+  }
+}
+
+module.exports = { generateToken, verifyToken, generateTemporaryToken, verifyRefreshToken };

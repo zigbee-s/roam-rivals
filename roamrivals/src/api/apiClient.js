@@ -45,18 +45,21 @@ apiClient.interceptors.response.use(
 
     if (error.response) {
       // Access token expired
-      console.log(error.response.data.message)
-      console.log(originalRequest._retry)
       if (error.response.status === 401 && error.response.data.message === 'TokenExpiredError' && !originalRequest._retry) {
         originalRequest._retry = true;
         const refreshToken = await getRefreshToken();
-
+        console.log("Client refresh token: ", refreshToken)
         if (refreshToken) {
           try {
-            const { data } = await axios.post(`${baseURL}/auth/refresh-token`, { refreshToken });
+            const idempotencyKey = uuid.v4();
+            const { data } = await axios.post(`${baseURL}/auth/refresh-token`, 
+              { refreshToken },
+              { headers: { 'Idempotency-Key': idempotencyKey } }
+            );
             await saveToken(data.token);
             await saveRefreshToken(data.refreshToken);
             originalRequest.headers.Authorization = `Bearer ${data.token}`;
+            originalRequest.headers['Idempotency-Key'] = uuid.v4(); // Add idempotency key to original request
             return apiClient(originalRequest);
           } catch (refreshError) {
             console.error("Error refreshing token:", refreshError);
@@ -70,7 +73,7 @@ apiClient.interceptors.response.use(
       }
 
       // Invalid refresh token
-      if (error.response.status === 403 && error.response.data.message === 'InvalidRefreshToken') {
+      if (error.response.status === 403 && error.response.data.message === 'Invalid refresh token') {
         console.error("Invalid refresh token");
         await deleteToken();
         await deleteRefreshToken();
