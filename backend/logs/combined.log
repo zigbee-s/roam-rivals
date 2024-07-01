@@ -22,3 +22,14 @@
 2024-06-30T15:24:47.024Z [[31merror[39m]: Failed to authenticate token jwt expired 
 2024-06-30T15:24:56.126Z [[32minfo[39m]: User logged in: gauraangsharma58@gmail.com 
 2024-06-30T15:25:02.655Z [[32minfo[39m]: User registered for event: 66815925ee5cebb6a5ddd166 
+2024-07-01T21:16:40.824Z [[32minfo[39m]: Server is running on port 3000 
+2024-07-01T21:18:12.121Z [[31merror[39m]: Failed to authenticate token jwt expired 
+2024-07-01T21:18:12.390Z [[32minfo[39m]: Refresh token generated 
+2024-07-01T21:18:20.332Z [[33mwarn[39m]: User already registered for event: 66815925ee5cebb6a5ddd166 
+2024-07-01T21:18:40.723Z [[32minfo[39m]: Event created: 66831d30283b8f79d26e8117 by user: 66815894ee5cebb6a5ddd153 
+2024-07-01T21:19:27.258Z [[32minfo[39m]: Server is running on port 3000 
+2024-07-01T21:19:39.962Z [[31merror[39m]: Failed to authenticate token jwt expired 
+2024-07-01T21:19:40.361Z [[32minfo[39m]: Refresh token generated 
+2024-07-01T21:19:45.987Z [[33mwarn[39m]: User already registered for event: 66815925ee5cebb6a5ddd166 
+2024-07-01T21:19:50.641Z [[33mwarn[39m]: User already registered for event: 66815925ee5cebb6a5ddd166 
+2024-07-01T21:19:56.024Z [[32minfo[39m]: User registered for event: 66831d30283b8f79d26e8117 
