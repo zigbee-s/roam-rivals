@@ -1,6 +1,6 @@
-// src/api/apiClient.js
+// roamrivals/src/api/apiClient.js
 import axios from 'axios';
-import { getToken, saveToken, deleteToken } from './tokenStorage';
+import { getToken, saveToken, deleteToken, getRefreshToken, saveRefreshToken, deleteRefreshToken } from './tokenStorage';
 import { navigationRef } from './navigationRef';
 import uuid from 'react-native-uuid';
 
@@ -43,24 +43,45 @@ apiClient.interceptors.response.use(
   async (error) => {
     const originalRequest = error.config;
 
-    if (error.response && error.response.status === 403 && !originalRequest._retry) {
-      originalRequest._retry = true;
-      const refreshToken = await getToken('refreshToken');
+    if (error.response) {
+      // Access token expired
+      console.log(error.response.data.message)
+      console.log(originalRequest._retry)
+      if (error.response.status === 401 && error.response.data.message === 'TokenExpiredError' && !originalRequest._retry) {
+        originalRequest._retry = true;
+        const refreshToken = await getRefreshToken();
 
-      if (refreshToken) {
-        try {
-          const { data } = await axios.post(`${baseURL}/auth/refresh-token`, { refreshToken });
-          await saveToken(data.token, 'jwt');
-          await saveToken(data.refreshToken, 'refreshToken');
-          originalRequest.headers.Authorization = `Bearer ${data.token}`;
-          return apiClient(originalRequest);
-        } catch (refreshError) {
-          console.error("Error refreshing token:", refreshError);
-          await deleteToken();
-          await deleteToken('refreshToken');
+        if (refreshToken) {
+          try {
+            const { data } = await axios.post(`${baseURL}/auth/refresh-token`, { refreshToken });
+            await saveToken(data.token);
+            await saveRefreshToken(data.refreshToken);
+            originalRequest.headers.Authorization = `Bearer ${data.token}`;
+            return apiClient(originalRequest);
+          } catch (refreshError) {
+            console.error("Error refreshing token:", refreshError);
+            await deleteToken();
+            await deleteRefreshToken();
+            navigationRef.navigate('Login');
+          }
+        } else {
           navigationRef.navigate('Login');
         }
-      } else {
+      }
+
+      // Invalid refresh token
+      if (error.response.status === 403 && error.response.data.message === 'InvalidRefreshToken') {
+        console.error("Invalid refresh token");
+        await deleteToken();
+        await deleteRefreshToken();
+        navigationRef.navigate('Login');
+      }
+
+      // Other errors
+      if (error.response.status === 403 || error.response.status === 400) {
+        console.error("Error response:", error.response.data.message);
+        await deleteToken();
+        await deleteRefreshToken();
         navigationRef.navigate('Login');
       }
     }

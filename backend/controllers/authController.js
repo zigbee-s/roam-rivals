@@ -109,7 +109,6 @@ async function verifyOtp(req, res) {
       return res.status(400).json({ message: 'Invalid or expired OTP' });
     }
 
-    await OTP.deleteOne({ _id: otpRecord._id });
 
     const user = new User({
       name: req.body.name,
@@ -121,6 +120,8 @@ async function verifyOtp(req, res) {
     });
 
     await user.save();
+
+    await OTP.deleteOne({ _id: otpRecord._id });
 
     const { token, refreshToken } = generateToken(user);
 
