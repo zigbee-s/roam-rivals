@@ -10,14 +10,8 @@ const IdempotencyKey = require('../models/idempotencyKeyModel');
 const logger = require('../logger');
 
 // Updated signup function
-async function signup(req, res) {
-  const { name, username, email, password, confirm_password, age } = req.body;
-  const idempotencyKey = req.idempotencyKey;
-
-  if (password !== confirm_password) {
-    logger.warn('Signup attempt with non-matching passwords');
-    return res.status(400).json({ message: 'Passwords do not match' });
-  }
+async function initialSignup(req, res) {
+  const { name, username, email, age } = req.body;
 
   try {
     const existingUser = await User.findOne({ email });
@@ -36,17 +30,51 @@ async function signup(req, res) {
     await OTP.create({ email, otp });
     await sendOtpEmail(email, otp);
 
-    const response = { message: 'OTP sent to email. Please verify OTP to complete signup.' };
-
-    idempotencyKey.status = 'completed';
-    idempotencyKey.response = response;
-    await idempotencyKey.save();
+    const response = { message: 'OTP sent to email. Please verify OTP to continue signup.' };
 
     logger.info(`Signup OTP sent to email: ${email}`);
     res.status(201).json(response);
   } catch (error) {
     logger.error('Signup failed', error);
     res.status(500).json({ message: 'Signup failed', error: error.message });
+  }
+}
+
+// Complete signup after OTP verification
+async function completeSignup(req, res) {
+  const { email, otp, password, confirm_password } = req.body;
+
+  if (password !== confirm_password) {
+    logger.warn('Signup attempt with non-matching passwords');
+    return res.status(400).json({ message: 'Passwords do not match' });
+  }
+
+  try {
+    const otpRecord = await OTP.findOne({ email, otp });
+    if (!otpRecord) {
+      logger.warn(`Invalid or expired OTP for email: ${email}`);
+      return res.status(400).json({ message: 'Invalid or expired OTP' });
+    }
+
+    const user = new User({
+      name: req.body.name,
+      username: req.body.username,
+      email,
+      password,
+      age: req.body.age,
+      roles: ['user'], // Assign a default role to the new user
+    });
+
+    await user.save();
+    await OTP.deleteOne({ _id: otpRecord._id });
+
+    const { token, refreshToken } = generateToken(user);
+
+    logger.info(`User signed up with email: ${email}`);
+    res.status(201).json({ token, refreshToken });
+  } catch (error) {
+    logger.error('Signup completion failed', error);
+    res.status(500).json({ message: 'Signup completion failed', error: error.message });
   }
 }
 
@@ -253,4 +281,4 @@ async function refreshToken(req, res) {
   }
 }
 
-module.exports = { signup, verifyOtp, verifyOtpForLogin, verifyOtpForForgotPassword, login, refreshToken, forgotPassword, resetPassword };
+module.exports = { initialSignup, completeSignup, verifyOtp, verifyOtpForLogin, verifyOtpForForgotPassword, login, refreshToken, forgotPassword, resetPassword };

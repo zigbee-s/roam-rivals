@@ -1,8 +1,8 @@
 // backend/routes/authRoutes.js
 
 const express = require('express');
-const { signup, login, verifyOtp, verifyOtpForLogin, verifyOtpForForgotPassword, refreshToken, forgotPassword, resetPassword } = require('../controllers/authController');
-const { validateSignupInput, validateLoginInput } = require('../middlewares/userValidation');
+const { initialSignup, completeSignup, login, verifyOtp, verifyOtpForLogin, verifyOtpForForgotPassword, refreshToken, forgotPassword, resetPassword } = require('../controllers/authController');
+const { validateInitialSignup, validateCompleteSignup, validateLoginInput } = require('../middlewares/userValidation');
 const createRateLimiter = require('../middlewares/rateLimiter');
 const idempotencyMiddleware = require('../middlewares/idempotencyMiddleware');
 
@@ -12,7 +12,8 @@ const router = express.Router();
 const signupLimiter = createRateLimiter(60 * 1000, 10, "Too many requests from this IP, please try again later");
 const loginLimiter = createRateLimiter(60 * 1000, 10, "Too many requests from this IP, please try again later");
 
-router.post('/signup', signupLimiter, validateSignupInput, idempotencyMiddleware, signup);
+router.post('/initial-signup', signupLimiter, validateInitialSignup, idempotencyMiddleware, initialSignup);
+router.post('/complete-signup', validateCompleteSignup, idempotencyMiddleware, completeSignup);
 router.post('/login', loginLimiter, validateLoginInput, idempotencyMiddleware, login);
 router.post('/verify-otp', idempotencyMiddleware, verifyOtp);
 router.post('/verify-otp-login', idempotencyMiddleware, verifyOtpForLogin);

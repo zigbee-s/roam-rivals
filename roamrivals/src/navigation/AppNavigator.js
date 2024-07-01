@@ -3,6 +3,8 @@ import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { Button, ActivityIndicator, View } from 'react-native';
 import SignupScreen from '../screens/SignupScreen';
+import CompleteSignupScreen from '../screens/CompleteSignupScreen';
+import OtpVerificationScreen from '../screens/OtpVerificationScreen';
 import LoginScreen from '../screens/LoginScreen';
 import ProfileScreen from '../screens/ProfileScreen';
 import HomeScreen from '../screens/HomeScreen';
@@ -79,6 +81,8 @@ const AppNavigator = () => {
           <Stack.Navigator initialRouteName={initialRoute}>
             <Stack.Screen name="Home" component={HomeScreen} />
             <Stack.Screen name="Signup" component={SignupScreen} />
+            <Stack.Screen name="OtpVerification" component={OtpVerificationScreen} />
+            <Stack.Screen name="CompleteSignup" component={CompleteSignupScreen} />
             <Stack.Screen name="Login">
               {(props) => <LoginScreen {...props} setUserRoles={setUserRoles} />}
             </Stack.Screen>

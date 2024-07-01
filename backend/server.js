@@ -28,21 +28,21 @@ const limiter = rateLimit({
 app.use(limiter);
 
 // Request logging middleware
-// app.use(expressWinston.logger({
-//   transports: [
-//     new winston.transports.Console(),
-//     new winston.transports.File({ filename: 'logs/request.log' })
-//   ],
-//   format: winston.format.combine(
-//     winston.format.colorize(),
-//     winston.format.json()
-//   ),
-//   meta: true,
-//   msg: "HTTP {{req.method}} {{req.url}}",
-//   expressFormat: true,
-//   colorize: false,
-//   ignoreRoute: function (req, res) { return false; }
-// }));
+app.use(expressWinston.logger({
+  transports: [
+    new winston.transports.Console(),
+    new winston.transports.File({ filename: 'logs/request.log' })
+  ],
+  format: winston.format.combine(
+    winston.format.colorize(),
+    winston.format.json()
+  ),
+  meta: true,
+  msg: "HTTP {{req.method}} {{req.url}}",
+  expressFormat: true,
+  colorize: false,
+  ignoreRoute: function (req, res) { return false; }
+}));
 
 // Routes
 app.use('/auth', authRoutes);
