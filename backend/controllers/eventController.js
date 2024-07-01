@@ -118,7 +118,7 @@ async function registerEvent(req, res) {
 
     if (user.events.includes(eventId)) {
       logger.warn(`User already registered for event: ${eventId}`);
-      return res.status(400).json({ message: 'User already registered for this event' });
+      return res.status(200).json({ message: 'You are already registered for this event' });
     }
 
     user.events.push(eventId);

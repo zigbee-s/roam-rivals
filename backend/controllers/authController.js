@@ -242,10 +242,8 @@ async function resetPassword(req, res) {
 // New refreshToken function
 async function refreshToken(req, res) {
   const { refreshToken } = req.body;
-  console.log("refresh token server side: ", refreshToken)
   try {
     const user = await verifyRefreshToken(refreshToken);
-    console.log("User: ", user)
     const newTokens = generateToken(user);
     logger.info('Refresh token generated');
     return res.status(200).json(newTokens);

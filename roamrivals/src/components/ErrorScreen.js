@@ -1,28 +1,19 @@
-// src/components/ErrorScreen.js
-import React, { useContext } from 'react';
-import { View, Text, Image, StyleSheet, Button } from 'react-native';
-import { ErrorContext } from '../context/ErrorContext';
-import NetInfo from '@react-native-community/netinfo';
+// roamrivals/src/components/ErrorScreen.js
+import React from 'react';
+import { View, Text, Button, StyleSheet } from 'react-native';
 
-const ErrorScreen = ({ onRetry }) => {
-  const { error, setError } = useContext(ErrorContext);
+const ErrorScreen = ({ route, navigation }) => {
+  const { errorType } = route.params;
 
-  const checkNetworkStatus = () => {
-    NetInfo.fetch().then(state => {
-      if (!state.isConnected) {
-        setError('Network issue, please check your connection.');
-      } else {
-        setError(null);
-        onRetry();
-      }
-    });
-  };
+  let errorMessage = "An unexpected error occurred.";
+  if (errorType === 'network') {
+    errorMessage = "Network issue or unable to connect to the backend. Please check your connection and try again.";
+  }
 
   return (
     <View style={styles.container}>
-      <Image source={require('../../assets/error.jpg')} style={styles.image} />
-      <Text style={styles.message}>{error}</Text>
-      <Button title="Retry" onPress={checkNetworkStatus} />
+      <Text style={styles.errorText}>{errorMessage}</Text>
+      <Button title="Go Back" onPress={() => navigation.goBack()} />
     </View>
   );
 };
@@ -34,15 +25,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     padding: 20,
   },
-  image: {
-    width: 200,
-    height: 200,
-    marginBottom: 20,
-  },
-  message: {
+  errorText: {
+    color: 'red',
     fontSize: 18,
-    textAlign: 'center',
     marginBottom: 20,
+    textAlign: 'center',
   },
 });
 

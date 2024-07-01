@@ -48,7 +48,6 @@ apiClient.interceptors.response.use(
       if (error.response.status === 401 && error.response.data.message === 'TokenExpiredError' && !originalRequest._retry) {
         originalRequest._retry = true;
         const refreshToken = await getRefreshToken();
-        console.log("Client refresh token: ", refreshToken)
         if (refreshToken) {
           try {
             const idempotencyKey = uuid.v4();
@@ -83,9 +82,12 @@ apiClient.interceptors.response.use(
       // Other errors
       if (error.response.status === 403 || error.response.status === 400) {
         console.error("Error response:", error.response.data.message);
-        await deleteToken();
-        await deleteRefreshToken();
-        navigationRef.navigate('Login');
+        return Promise.reject(error);
+      }
+    } else {
+      // Network or backend connection error
+      if (!error.response) {
+        navigationRef.navigate('ErrorScreen', { errorType: 'network' });
       }
     }
 
