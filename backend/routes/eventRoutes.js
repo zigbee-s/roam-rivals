@@ -10,7 +10,7 @@ const router = express.Router();
 const eventLimiter = createRateLimiter(60 * 1000, 10, "Too many requests from this IP, please try again later");
 
 router.post('/', authMiddleware, roleMiddleware(['admin']), eventLimiter, createEvent);
-router.get('/', getEvents);
+router.get('/', authMiddleware, getEvents);
 router.post('/register', authMiddleware, registerEvent);
 router.get('/:eventId', getEventById);
 router.put('/:eventId', authMiddleware, roleMiddleware(['admin']), eventLimiter, updateEvent);
