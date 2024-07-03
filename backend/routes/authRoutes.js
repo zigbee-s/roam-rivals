@@ -13,7 +13,7 @@ const signupLimiter = createRateLimiter(60 * 1000, 10, "Too many requests from t
 const loginLimiter = createRateLimiter(60 * 1000, 10, "Too many requests from this IP, please try again later");
 
 router.post('/initial-signup', signupLimiter, validateInitialSignup, idempotencyMiddleware, initialSignup);
-router.post('/complete-signup', validateCompleteSignup, idempotencyMiddleware, completeSignup);
+router.post('/complete-signup', idempotencyMiddleware, completeSignup);
 router.post('/login', loginLimiter, validateLoginInput, idempotencyMiddleware, login);
 router.post('/verify-otp', idempotencyMiddleware, verifyOtp);
 router.post('/verify-otp-login', idempotencyMiddleware, verifyOtpForLogin);

@@ -1,9 +1,10 @@
 // src/screens/OtpVerificationScreen.js
 import React, { useState } from 'react';
-import { View, StyleSheet, TextInput, Text, Alert } from 'react-native';
+import { View, StyleSheet, TextInput, Text } from 'react-native';
 import { Formik } from 'formik';
 import * as yup from 'yup';
 import CustomButton from '../components/CustomButton';
+import apiClient from '../api/apiClient';  // Import your API client
 
 const otpValidationSchema = yup.object().shape({
   otp: yup.string().required('OTP is required'),
@@ -18,10 +19,31 @@ const OtpVerificationScreen = ({ route, navigation }) => {
     setLoading(true);
     setErrorMessage('');
     try {
-      // Verify OTP here, but we don't need to call the backend here, we do it in the next screen
-      navigation.navigate('CompleteSignup', { signupData, otp: values.otp });
+      console.log("Sending request to verify OTP with email:", signupData.email, "and OTP:", values.otp); // Debug log
+      // Call backend to verify OTP
+      const response = await apiClient.post('/auth/verify-otp', {
+        email: signupData.email,
+        otp: values.otp,
+      });
+
+      console.log("Response received:", response.data); // Debug log
+      
+      // If OTP is verified successfully, navigate to CompleteSignup screen
+      if (response.data.message === 'OTP verified successfully') {
+        console.log("OTP verified successfully, navigating to CompleteSignup"); // Debug log
+        navigation.navigate('CompleteSignup', { signupData });
+      } else {
+        console.log("OTP verification failed with message:", response.data.message); // Debug log
+        setErrorMessage('Invalid OTP');
+      }
     } catch (error) {
-      setErrorMessage(error.response?.data?.message || 'An unexpected error occurred');
+      if (error.response && error.response.status === 400) {
+        console.log("OTP verification failed, invalid or expired OTP"); // Debug log
+        setErrorMessage('Invalid or expired OTP');
+      } else {
+        console.log("Error occurred during OTP verification:", error); // Debug log
+        setErrorMessage('An unexpected error occurred');
+      }
     } finally {
       setLoading(false);
       actions.setSubmitting(false);
@@ -67,6 +89,7 @@ const styles = StyleSheet.create({
   },
   errorText: {
     color: 'red',
+    marginTop: 8,
   },
 });
 

@@ -20,14 +20,14 @@ const CompleteSignupScreen = ({ route, navigation }) => {
   const [loading, setLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
 
-  const { signupData, otp } = route.params;
+  const { signupData } = route.params;
 
   const handleCompleteSignup = async (values) => {
     setLoading(true);
     setErrorMessage('');
     setError(null); // Clear previous errors
     try {
-      const response = await apiClient.post('/auth/complete-signup', { ...signupData, otp, ...values });
+      const response = await apiClient.post('/auth/complete-signup', { ...signupData, ...values });
       await saveToken(response.data.token, 'jwt');
       await saveToken(response.data.refreshToken, 'refreshToken');
       const rolesResponse = await apiClient.get('/user/profile', {

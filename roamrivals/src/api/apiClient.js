@@ -80,12 +80,12 @@ apiClient.interceptors.response.use(
       }
 
       // Other errors
-      if (error.response.status === 403 || error.response.status === 400) {
-        console.error("Error response:", error.response.data.message);
-        await deleteToken();
-        await deleteRefreshToken();
-        navigationRef.navigate('Login');
-      }
+      // if (error.response.status === 403 || error.response.status === 400) {
+      //   console.error("Error response:", error.response.data.message);
+      //   await deleteToken();
+      //   await deleteRefreshToken();
+      //   navigationRef.navigate('Login');
+      // }
     }
 
     return Promise.reject(error);

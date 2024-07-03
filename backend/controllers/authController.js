@@ -42,7 +42,7 @@ async function initialSignup(req, res) {
 
 // Complete signup after OTP verification
 async function completeSignup(req, res) {
-  const { email, otp, password, confirm_password } = req.body;
+  const { email, password, confirm_password, name, username, age } = req.body;
 
   if (password !== confirm_password) {
     logger.warn('Signup attempt with non-matching passwords');
@@ -50,23 +50,22 @@ async function completeSignup(req, res) {
   }
 
   try {
-    const otpRecord = await OTP.findOne({ email, otp });
-    if (!otpRecord) {
-      logger.warn(`Invalid or expired OTP for email: ${email}`);
-      return res.status(400).json({ message: 'Invalid or expired OTP' });
+    const existingUser = await User.findOne({ email });
+    if (existingUser) {
+      logger.warn(`Signup attempt with existing email: ${email}`);
+      return res.status(400).json({ message: 'Email already in use' });
     }
 
     const user = new User({
-      name: req.body.name,
-      username: req.body.username,
+      name,
+      username,
       email,
       password,
-      age: req.body.age,
+      age,
       roles: ['user'], // Assign a default role to the new user
     });
 
     await user.save();
-    await OTP.deleteOne({ _id: otpRecord._id });
 
     const { token, refreshToken } = generateToken(user);
 
@@ -77,6 +76,7 @@ async function completeSignup(req, res) {
     res.status(500).json({ message: 'Signup completion failed', error: error.message });
   }
 }
+
 
 // Updated login function
 async function login(req, res) {
@@ -137,29 +137,53 @@ async function verifyOtp(req, res) {
       return res.status(400).json({ message: 'Invalid or expired OTP' });
     }
 
-
-    const user = new User({
-      name: req.body.name,
-      username: req.body.username,
-      email,
-      password: req.body.password,
-      age: req.body.age,
-      roles: ['user'], // Assign a default role to the new user
-    });
-
-    await user.save();
-
     await OTP.deleteOne({ _id: otpRecord._id });
 
-    const { token, refreshToken } = generateToken(user);
-
-    logger.info(`User signed up with email: ${email}`);
-    res.status(201).json({ token, refreshToken });
+    logger.info(`OTP verified and deleted for email: ${email}`);
+    res.status(200).json({ message: 'OTP verified successfully' });
   } catch (error) {
     logger.error('OTP verification failed', error);
     res.status(500).json({ message: 'OTP verification failed', error: error.message });
   }
 }
+
+// Set password function
+// async function completeSignup(req, res) {
+//   const { email, password, confirm_password, name, username, age } = req.body;
+
+//   if (password !== confirm_password) {
+//     logger.warn('Password setup attempt with non-matching passwords');
+//     return res.status(400).json({ message: 'Passwords do not match' });
+//   }
+
+//   try {
+//     const existingUser = await User.findOne({ email });
+//     if (existingUser) {
+//       logger.warn(`Password setup attempt with existing email: ${email}`);
+//       return res.status(400).json({ message: 'Email already in use' });
+//     }
+
+//     const user = new User({
+//       name,
+//       username,
+//       email,
+//       password,
+//       age,
+//       roles: ['user'], // Assign a default role to the new user
+//     });
+
+//     await user.save();
+
+//     const { token, refreshToken } = generateToken(user);
+
+//     logger.info(`User password set for email: ${email}`);
+//     res.status(201).json({ token, refreshToken });
+//   } catch (error) {
+//     logger.error('Password setup failed', error);
+//     res.status(500).json({ message: 'Password setup failed', error: error.message });
+//   }
+// }
+
 
 // Verify OTP for login function
 async function verifyOtpForLogin(req, res) {
@@ -213,6 +237,7 @@ async function verifyOtpForForgotPassword(req, res) {
     res.status(500).json({ message: 'OTP verification failed', error: error.message });
   }
 }
+
 
 // New forgotPassword function
 async function forgotPassword(req, res) {
