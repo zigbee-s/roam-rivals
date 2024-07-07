@@ -5,6 +5,7 @@ const connectDB = require('./db/db');
 const authRoutes = require('./routes/authRoutes');
 const userRoutes = require('./routes/userRoutes');
 const eventRoutes = require('./routes/eventRoutes');
+const photoRoutes = require('./routes/photoRoutes')
 const rateLimit = require('express-rate-limit');
 const expressWinston = require('express-winston');
 const winston = require('winston'); // Add this line to import winston
@@ -48,6 +49,8 @@ app.use(expressWinston.logger({
 app.use('/auth', authRoutes);
 app.use('/user', userRoutes);
 app.use('/events', eventRoutes);
+app.use('/photos', photoRoutes); // New photo routes
+
 
 // Error handling middleware
 app.use((err, req, res, next) => {

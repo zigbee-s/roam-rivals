@@ -1,15 +1,24 @@
+// backend/db/db.js
 const mongoose = require('mongoose');
-const { MONGODB_URI } = require('../config/config');
+const Grid = require('gridfs-stream');
 
-async function connectDB() {
+const connectDB = async () => {
   try {
-    await mongoose.connect(MONGODB_URI, {
+    await mongoose.connect(process.env.MONGODB_URI, { useNewUrlParser: true, useUnifiedTopology: true });
+    console.log('MongoDB connected...');
+
+    const conn = mongoose.connection;
+    let gfs;
+
+    conn.once('open', () => {
+      gfs = Grid(conn.db, mongoose.mongo);
+      gfs.collection('uploads');
+      console.log('GridFS initialized...');
     });
-    console.log("Connected to MongoDB successfully!");
-  } catch (error) {
-    console.error("Failed to connect to MongoDB", error);
-    throw error;
+  } catch (err) {
+    console.error(err.message);
+    process.exit(1);
   }
-}
+};
 
 module.exports = connectDB;

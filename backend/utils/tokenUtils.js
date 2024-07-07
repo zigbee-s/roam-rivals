@@ -4,7 +4,7 @@ const { JWT_SECRET, REFRESH_TOKEN_SECRET, TEMPORARY_TOKEN_SECRET } = require('..
 const User = require('../models/userModel');
 
 function generateToken(user) {
-  const token = jwt.sign({ userId: user._id, email: user.email, roles: user.roles }, JWT_SECRET, { expiresIn: '1m' });
+  const token = jwt.sign({ userId: user._id, email: user.email, roles: user.roles }, JWT_SECRET, { expiresIn: '1d' });
   const refreshToken = jwt.sign({ userId: user._id, email: user.email, roles: user.roles }, REFRESH_TOKEN_SECRET, { expiresIn: '7d' });
   return { token, refreshToken };
 }
