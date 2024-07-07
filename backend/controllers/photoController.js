@@ -1,9 +1,7 @@
 // backend/controllers/photoController.js
 const Photo = require('../models/photoModel');
 const PhotographyEvent = require('../models/eventModel').PhotographyEvent;
-const User = require('../models/userModel');
 const logger = require('../logger');
-const { gfs } = require('../db/db');
 
 async function uploadPhoto(req, res) {
   const { title, description, event } = req.body;
@@ -13,21 +11,12 @@ async function uploadPhoto(req, res) {
     return res.status(400).json({ message: 'No file uploaded' });
   }
 
-  const imageUrl = req.file.filename; // The filename saved in GridFS
+  const imageUrl = req.file.filename;
 
   try {
     const photoEvent = await PhotographyEvent.findById(event);
     if (!photoEvent) {
       return res.status(404).json({ message: 'Event not found' });
-    }
-
-    const user = await User.findById(uploadedBy).select('events');
-    if (!user) {
-      return res.status(403).json({ message: 'User not found' });
-    }
-
-    if (!user.events.includes(event)) {
-      return res.status(403).json({ message: 'You are not registered for this event' });
     }
 
     const newPhoto = new Photo({ title, description, event, imageUrl, uploadedBy });
@@ -44,7 +33,7 @@ async function uploadPhoto(req, res) {
   }
 }
 
-async function getPhotos(req, res) {
+async function getAllPhotos(req, res) {
   try {
     const photos = await Photo.find().populate('uploadedBy', 'name username').populate('event', 'title');
     res.status(200).json(photos);
@@ -54,10 +43,25 @@ async function getPhotos(req, res) {
   }
 }
 
+async function getPhotosByEvent(req, res) {
+  const { eventId } = req.params;
+
+  try {
+    const photos = await Photo.find({ event: eventId }).populate('uploadedBy', 'name username').populate('event', 'title');
+    if (!photos || photos.length === 0) {
+      return res.status(404).json({ message: 'No photos found for this event' });
+    }
+    res.status(200).json(photos);
+  } catch (error) {
+    logger.error('Failed to fetch photos for event', error);
+    res.status(500).json({ message: 'Failed to fetch photos for event', error: error.message });
+  }
+}
+
 async function likePhoto(req, res) {
   const { photoId } = req.body;
   const userId = req.user.userId;
-  const maxLikes = 10; // Set the max photos a user can like
+  const maxLikes = 10;
 
   try {
     const photo = await Photo.findById(photoId);
@@ -83,4 +87,4 @@ async function likePhoto(req, res) {
   }
 }
 
-module.exports = { uploadPhoto, getPhotos, likePhoto };
+module.exports = { uploadPhoto, getAllPhotos, getPhotosByEvent, likePhoto };
