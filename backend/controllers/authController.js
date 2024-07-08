@@ -80,7 +80,9 @@ async function completeSignup(req, res) {
 
 // Updated login function
 async function login(req, res) {
+  console.log("##################################")
   const { email, password, useOtp } = req.body;
+  console.log("###############################", req.body)
   const idempotencyKey = req.idempotencyKey;
 
   try {
@@ -91,6 +93,10 @@ async function login(req, res) {
     }
 
     if (useOtp) {
+      if (!email) {
+        logger.warn('Email is required for OTP login');
+        return res.status(400).json({ message: 'Email is required for OTP login' });
+      }
       const otp = generateOtp();
       await OTP.create({ email, otp });
       await sendOtpEmail(email, otp);
@@ -103,6 +109,11 @@ async function login(req, res) {
 
       logger.info(`Login OTP sent to email: ${email}`);
       return res.status(200).json(response);
+    }
+
+    if (!password) {
+      logger.warn('Password is required for password login');
+      return res.status(400).json({ message: 'Password is required for password login' });
     }
 
     const isMatch = await bcrypt.compare(password, user.password);
@@ -125,6 +136,7 @@ async function login(req, res) {
     res.status(500).json({ message: 'Login failed', error: error.message });
   }
 }
+
 
 // Verify OTP function
 async function verifyOtp(req, res) {

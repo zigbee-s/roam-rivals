@@ -27,7 +27,8 @@ const LoginScreen = ({ navigation }) => {
     setErrorMessage('');
     setError(null); // Clear any previous error
     try {
-      const response = await apiClient.post('/auth/login', { email, password, useOtp });
+      const requestData = useOtp ? { email, useOtp } : { email, password };
+      const response = await apiClient.post('/auth/login', requestData);
       if (useOtp) {
         setEmail(email);
         setOtpSent(true);
@@ -51,6 +52,7 @@ const LoginScreen = ({ navigation }) => {
       setLoading(false);
     }
   };
+  
 
   const handleVerifyOtp = async () => {
     setLoading(true);

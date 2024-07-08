@@ -1,10 +1,8 @@
-const { check, validationResult } = require('express-validator');
+const { check, validationResult, body } = require('express-validator'); // Added body import
 const User = require('../models/userModel');
 const { SCHOOL_DOMAINS } = require('../config/config');
 
-const allowedDomains = SCHOOL_DOMAINS // Add the allowed domains here
-
-// Validation for initial signup (without password)
+const allowedDomains = SCHOOL_DOMAINS; // Add the allowed domains here
 
 // Validation for initial signup (without password)
 const validateInitialSignup = [
@@ -62,7 +60,13 @@ const validateCompleteSignup = [
 // Validation for login
 const validateLoginInput = [
   check('email').isEmail().withMessage('Invalid email').notEmpty().withMessage('Email is required'),
-  check('password').notEmpty().withMessage('Password is required'),
+  // Custom validation for password based on useOtp flag
+  body('password').custom((value, { req }) => {
+    if (!req.body.useOtp && !value) {
+      throw new Error('Password is required');
+    }
+    return true;
+  }),
   (req, res, next) => {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
@@ -72,4 +76,4 @@ const validateLoginInput = [
   },
 ];
 
-module.exports = { validateInitialSignup, validateCompleteSignup, validateLoginInput }
+module.exports = { validateInitialSignup, validateCompleteSignup, validateLoginInput };
