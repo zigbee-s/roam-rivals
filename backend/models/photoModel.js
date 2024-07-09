@@ -1,15 +1,16 @@
-// backend/models/photoModel.js
 const mongoose = require('mongoose');
 const { Schema } = mongoose;
 
 const photoSchema = new Schema({
   title: { type: String, required: true },
-  description: { type: String },
+  description: { type: String, required: true },
+  event: { type: Schema.Types.ObjectId, ref: 'Event', required: true }, // Reference to Event model
   imageUrl: { type: String, required: true },
-  event: { type: Schema.Types.ObjectId, ref: 'Event', required: true },
   uploadedBy: { type: Schema.Types.ObjectId, ref: 'User', required: true },
   likes: [{ type: Schema.Types.ObjectId, ref: 'User' }],
-  createdAt: { type: Date, default: Date.now }
+  isWinner: { type: Boolean, default: false }
 });
 
-module.exports = mongoose.model('Photo', photoSchema);
+const Photo = mongoose.model('Photo', photoSchema);
+
+module.exports = Photo;

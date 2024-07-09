@@ -45,4 +45,40 @@ async function assignRole(req, res) {
   }
 }
 
-module.exports = { getProfile, assignRole };
+
+async function updateSkills(req, res) {
+  const { skills } = req.body;
+  try {
+    const user = await User.findById(req.user.userId);
+    if (!user) {
+      logger.warn(`User not found for updating skills: ${req.user.userId}`);
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    user.skills = skills;
+    await user.save();
+
+    logger.info(`Skills updated for user: ${req.user.userId}`);
+    res.status(200).json({ message: 'Skills updated successfully', skills: user.skills });
+  } catch (error) {
+    logger.error('Failed to update skills', error);
+    res.status(500).json({ message: 'Failed to update skills', error: error.message });
+  }
+}
+
+async function getSkills(req, res) {
+  try {
+    const user = await User.findById(req.user.userId).select('skills');
+    if (!user) {
+      logger.warn(`User not found for fetching skills: ${req.user.userId}`);
+      return res.status(404).json({ message: 'User not found' });
+    }
+    res.status(200).json({ skills: user.skills });
+  } catch (error) {
+    logger.error('Failed to fetch skills', error);
+    res.status(500).json({ message: 'Failed to fetch skills', error: error.message });
+  }
+}
+
+
+module.exports = { getProfile, assignRole, updateSkills, getSkills };

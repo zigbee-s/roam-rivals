@@ -1,7 +1,7 @@
-// backend/controllers/photoController.js
 const Photo = require('../models/photoModel');
-const PhotographyEvent = require('../models/eventModel').PhotographyEvent;
+const { PhotographyEvent } = require('../models/eventModel'); // Correctly import the PhotographyEvent model
 const logger = require('../logger');
+const { sendEmail } = require('../utils/emailService'); // Ensure you have an email service utility
 
 async function uploadPhoto(req, res) {
   const { title, description, event } = req.body;
@@ -11,7 +11,7 @@ async function uploadPhoto(req, res) {
     return res.status(400).json({ message: 'No file uploaded' });
   }
 
-  const imageUrl = req.file.filename;
+  const imageUrl = req.file.location; // This URL will be the S3 URL of the uploaded file
 
   try {
     const photoEvent = await PhotographyEvent.findById(event);
@@ -87,4 +87,43 @@ async function likePhoto(req, res) {
   }
 }
 
-module.exports = { uploadPhoto, getAllPhotos, getPhotosByEvent, likePhoto };
+async function determineWinner(req, res) {
+  const { eventId } = req.params;
+
+  try {
+    const event = await PhotographyEvent.findById(eventId).populate('photos');
+    if (!event) {
+      return res.status(404).json({ message: 'Event not found' });
+    }
+
+    if (new Date() < new Date(event.eventEndDate)) {
+      return res.status(400).json({ message: 'Event is still ongoing' });
+    }
+
+    let winningPhoto = null;
+    let maxLikes = -1;
+
+    for (const photo of event.photos) {
+      if (photo.likes.length > maxLikes) {
+        maxLikes = photo.likes.length;
+        winningPhoto = photo;
+      }
+    }
+
+    if (winningPhoto) {
+      const user = await User.findById(winningPhoto.uploadedBy);
+      await sendEmail(user.email, 'Congratulations! You have won the photography event', `Your photo titled "${winningPhoto.title}" has won with ${maxLikes} likes.`);
+      winningPhoto.isWinner = true;
+      await winningPhoto.save();
+      res.status(200).json({ message: 'Winner determined and notified', winningPhoto });
+    } else {
+      res.status(404).json({ message: 'No photos in the event' });
+    }
+  } catch (error) {
+    logger.error('Failed to determine winner', error);
+    res.status(500).json({ message: 'Failed to determine winner', error: error.message });
+  }
+}
+
+module.exports = { uploadPhoto, getAllPhotos, getPhotosByEvent, likePhoto, determineWinner };
+ 

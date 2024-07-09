@@ -1,14 +1,14 @@
-// backend/routes/photoRoutes.js
 const express = require('express');
-const { uploadPhoto, getAllPhotos, likePhoto, getPhotosByEvent } = require('../controllers/photoController');
+const { uploadPhoto, getAllPhotos, getPhotosByEvent, likePhoto, determineWinner } = require('../controllers/photoController');
 const { authMiddleware } = require('../middlewares/authMiddleware');
-const upload = require('../middlewares/uploadMiddleware');
+const { upload } = require('../utils/s3Utils'); // Ensure correct path to s3Utils
 
 const router = express.Router();
 
-router.post('/upload', authMiddleware, upload.single('image'), uploadPhoto);
-router.get('/', authMiddleware, getAllPhotos);
+router.post('/upload', authMiddleware, upload.single('photo'), uploadPhoto);
+router.get('/', getAllPhotos);
+router.get('/event/:eventId', getPhotosByEvent);
 router.post('/like', authMiddleware, likePhoto);
-router.get('/event/:eventId', authMiddleware, getPhotosByEvent);
+router.post('/determine-winner/:eventId', authMiddleware, determineWinner);
 
 module.exports = router;

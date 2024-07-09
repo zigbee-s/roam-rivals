@@ -1,4 +1,3 @@
-// backend/models/eventModel.js
 const mongoose = require('mongoose');
 const { Schema } = mongoose;
 
@@ -32,7 +31,9 @@ const QuizEvent = Event.discriminator('quiz', quizEventSchema);
 const photographyEventSchema = new Schema({
   maxPhotos: { type: Number, required: true },
   themes: [{ type: String, required: true }],
+  startingDate: { type: Date, required: true },
   submissionDeadline: { type: Date, required: true },
+  eventEndDate: { type: Date, required: true },
   photos: [{ type: Schema.Types.ObjectId, ref: 'Photo' }]
 });
 

@@ -4,15 +4,14 @@ const bcrypt = require('bcrypt');
 
 const userSchema = new mongoose.Schema({
   name: { type: String, required: true },
-  username: { type: String, required: true, unique: true }, // Added username
+  username: { type: String, required: true, unique: true },
   email: { type: String, required: true, unique: true },
-  password: { type: String, required: true }, // Hashed password
-  age: { type: Number, required: true }, // Added age
-  roles: [{ type: String, enum: ['user', 'admin'], default: 'user' }], // Array of roles
-  events: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Event' }], // Array of event IDs
-  createdAt: { type: Date, default: Date.now },
-  updatedAt: { type: Date, default: Date.now },
-});
+  password: { type: String, required: true },
+  age: { type: Number, required: true },
+  roles: [{ type: String, enum: ['user', 'admin'], default: 'user' }],
+  events: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Event' }],
+  skills: { type: [String], default: [] }, // Add skills field
+}, { timestamps: true });
 
 // Hash password before saving
 userSchema.pre('save', async function(next) {
@@ -24,5 +23,10 @@ userSchema.pre('save', async function(next) {
   user.password = hash;
   next();
 });
+
+// Compare password for login
+userSchema.methods.comparePassword = async function(candidatePassword) {
+  return bcrypt.compare(candidatePassword, this.password);
+};
 
 module.exports = mongoose.model('User', userSchema);
