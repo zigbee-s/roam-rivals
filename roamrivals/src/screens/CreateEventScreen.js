@@ -1,4 +1,3 @@
-//src/screens/CreateEventScreen.js
 import React, { useState } from 'react';
 import { Picker } from '@react-native-picker/picker';
 import { View, TextInput, StyleSheet, Alert, ActivityIndicator, ScrollView, Text } from 'react-native';
@@ -10,7 +9,8 @@ import CustomButton from '../components/CustomButton';
 const validationSchema = yup.object().shape({
   title: yup.string().required('Title is required'),
   description: yup.string().required('Description is required'),
-  date: yup.string().required('Date is required'),
+  startingDate: yup.string().required('Starting date is required'),
+  eventEndDate: yup.string().required('Event end date is required'),
   location: yup.string().required('Location is required'),
   eventType: yup.string().required('Event type is required'),
   numberOfQuestions: yup.number()
@@ -49,23 +49,11 @@ const validationSchema = yup.object().shape({
       is: 'photography',
       then: schema => schema.required('Themes are required for photography'),
     }),
-  startingDate: yup.string()
+  PhotosubmissionDeadline: yup.string()
     .nullable()
     .when('eventType', {
       is: 'photography',
-      then: schema => schema.required('Starting date is required for photography'),
-    }),
-  submissionDeadline: yup.string()
-    .nullable()
-    .when('eventType', {
-      is: 'photography',
-      then: schema => schema.required('Submission deadline is required for photography'),
-    }),
-  eventEndDate: yup.string()
-    .nullable()
-    .when('eventType', {
-      is: 'photography',
-      then: schema => schema.required('Event end date is required for photography'),
+      then: schema => schema.required('Photo submission deadline is required for photography'),
     }),
 });
 
@@ -141,7 +129,8 @@ const CreateEventScreen = ({ navigation }) => {
         initialValues={{
           title: '',
           description: '',
-          date: '',
+          startingDate: '',
+          eventEndDate: '',
           location: '',
           eventType: 'general',
           numberOfQuestions: '',
@@ -150,9 +139,7 @@ const CreateEventScreen = ({ navigation }) => {
           questions: '',
           maxPhotos: '',
           themes: '',
-          startingDate: '',
-          submissionDeadline: '',
-          eventEndDate: '',
+          PhotosubmissionDeadline: '',
         }}
         validationSchema={validationSchema}
         onSubmit={handleCreateEvent}
@@ -177,12 +164,20 @@ const CreateEventScreen = ({ navigation }) => {
             {touched.description && errors.description && <Text style={styles.errorText}>{errors.description}</Text>}
             <TextInput
               style={styles.input}
-              placeholder="Date"
-              onChangeText={handleChange('date')}
-              onBlur={handleBlur('date')}
-              value={values.date}
+              placeholder="Starting Date"
+              onChangeText={handleChange('startingDate')}
+              onBlur={handleBlur('startingDate')}
+              value={values.startingDate}
             />
-            {touched.date && errors.date && <Text style={styles.errorText}>{errors.date}</Text>}
+            {touched.startingDate && errors.startingDate && <Text style={styles.errorText}>{errors.startingDate}</Text>}
+            <TextInput
+              style={styles.input}
+              placeholder="Event End Date"
+              onChangeText={handleChange('eventEndDate')}
+              onBlur={handleBlur('eventEndDate')}
+              value={values.eventEndDate}
+            />
+            {touched.eventEndDate && errors.eventEndDate && <Text style={styles.errorText}>{errors.eventEndDate}</Text>}
             <TextInput
               style={styles.input}
               placeholder="Location"
@@ -261,28 +256,12 @@ const CreateEventScreen = ({ navigation }) => {
                 {touched.themes && errors.themes && <Text style={styles.errorText}>{errors.themes}</Text>}
                 <TextInput
                   style={styles.input}
-                  placeholder="Starting Date"
-                  onChangeText={handleChange('startingDate')}
-                  onBlur={handleBlur('startingDate')}
-                  value={values.startingDate}
+                  placeholder="Photo Submission Deadline"
+                  onChangeText={handleChange('PhotosubmissionDeadline')}
+                  onBlur={handleBlur('PhotosubmissionDeadline')}
+                  value={values.PhotosubmissionDeadline}
                 />
-                {touched.startingDate && errors.startingDate && <Text style={styles.errorText}>{errors.startingDate}</Text>}
-                <TextInput
-                  style={styles.input}
-                  placeholder="Submission Deadline"
-                  onChangeText={handleChange('submissionDeadline')}
-                  onBlur={handleBlur('submissionDeadline')}
-                  value={values.submissionDeadline}
-                />
-                {touched.submissionDeadline && errors.submissionDeadline && <Text style={styles.errorText}>{errors.submissionDeadline}</Text>}
-                <TextInput
-                  style={styles.input}
-                  placeholder="Event End Date"
-                  onChangeText={handleChange('eventEndDate')}
-                  onBlur={handleBlur('eventEndDate')}
-                  value={values.eventEndDate}
-                />
-                {touched.eventEndDate && errors.eventEndDate && <Text style={styles.errorText}>{errors.eventEndDate}</Text>}
+                {touched.PhotosubmissionDeadline && errors.PhotosubmissionDeadline && <Text style={styles.errorText}>{errors.PhotosubmissionDeadline}</Text>}
               </>
             )}
             {loading ? (
