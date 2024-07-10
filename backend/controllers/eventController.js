@@ -4,7 +4,7 @@ const { sendEventRegistrationEmail } = require('../utils/emailService');
 const logger = require('../logger');
 
 async function createEvent(req, res) {
-  const { title, description, date, location, eventType, maxPhotos, themes, startingDate, submissionDeadline, eventEndDate, ...rest } = req.body;
+  const { title, description, startingDate, eventEndDate, location, eventType, maxPhotos, themes, PhotosubmissionDeadline, ...rest } = req.body;
   const createdBy = req.user.userId;
 
   try {
@@ -15,17 +15,17 @@ async function createEvent(req, res) {
           logger.warn(`Unauthorized quiz event creation attempt by user: ${req.user.userId}`);
           return res.status(403).json({ message: 'Only admins can create quiz events' });
         }
-        event = new QuizEvent({ title, description, date, location, createdBy, eventType, ...rest });
+        event = new QuizEvent({ title, description, startingDate, eventEndDate, location, createdBy, eventType, ...rest });
         break;
       case 'photography':
         if (!req.user.roles.includes('admin')) {
           logger.warn(`Unauthorized photography event creation attempt by user: ${req.user.userId}`);
           return res.status(403).json({ message: 'Only admins can create photography events' });
         }
-        event = new PhotographyEvent({ title, description, date, location, createdBy, eventType, maxPhotos, themes, startingDate, submissionDeadline, eventEndDate, ...rest });
+        event = new PhotographyEvent({ title, description, startingDate, eventEndDate, location, createdBy, eventType, maxPhotos, themes, PhotosubmissionDeadline, ...rest });
         break;
       default:
-        event = new Event({ title, description, date, location, createdBy, eventType });
+        event = new Event({ title, description, startingDate, eventEndDate, location, createdBy, eventType });
     }
 
     await event.save();

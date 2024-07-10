@@ -112,7 +112,7 @@ async function determineWinner(req, res) {
 
     if (winningPhoto) {
       const user = await User.findById(winningPhoto.uploadedBy);
-      await sendEmail(user.email, 'Congratulations! You have won the photography event', `Your photo titled "${winningPhoto.title}" has won with ${maxLikes} likes.`);
+      await sendEmail(user.email, 'Congratulations! You have won the photography event', `Your photo titled \"${winningPhoto.title}\" has won with ${maxLikes} likes.`);
       winningPhoto.isWinner = true;
       await winningPhoto.save();
       res.status(200).json({ message: 'Winner determined and notified', winningPhoto });
@@ -126,4 +126,3 @@ async function determineWinner(req, res) {
 }
 
 module.exports = { uploadPhoto, getAllPhotos, getPhotosByEvent, likePhoto, determineWinner };
- 

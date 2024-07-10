@@ -1,10 +1,13 @@
+// eventModel.js
+
 const mongoose = require('mongoose');
 const { Schema } = mongoose;
 
 const eventSchema = new Schema({
   title: { type: String, required: true },
   description: { type: String, required: true },
-  date: { type: Date, required: true },
+  startingDate: { type: Date, required: true },
+  eventEndDate: { type: Date, required: true },
   location: { type: String, required: true },
   createdBy: { type: Schema.Types.ObjectId, ref: 'User', required: true },
   eventType: { type: String, required: true, enum: ['general', 'quiz', 'photography'] },
@@ -31,9 +34,7 @@ const QuizEvent = Event.discriminator('quiz', quizEventSchema);
 const photographyEventSchema = new Schema({
   maxPhotos: { type: Number, required: true },
   themes: [{ type: String, required: true }],
-  startingDate: { type: Date, required: true },
-  submissionDeadline: { type: Date, required: true },
-  eventEndDate: { type: Date, required: true },
+  PhotosubmissionDeadline: { type: Date, required: true },
   photos: [{ type: Schema.Types.ObjectId, ref: 'Photo' }]
 });
 

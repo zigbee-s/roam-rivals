@@ -37,6 +37,36 @@ const validationSchema = yup.object().shape({
       is: 'quiz',
       then: schema => schema.required('Questions are required for quiz'),
     }),
+  maxPhotos: yup.number()
+    .nullable()
+    .when('eventType', {
+      is: 'photography',
+      then: schema => schema.required('Max photos is required for photography').positive().integer(),
+    }),
+  themes: yup.string()
+    .nullable()
+    .when('eventType', {
+      is: 'photography',
+      then: schema => schema.required('Themes are required for photography'),
+    }),
+  startingDate: yup.string()
+    .nullable()
+    .when('eventType', {
+      is: 'photography',
+      then: schema => schema.required('Starting date is required for photography'),
+    }),
+  submissionDeadline: yup.string()
+    .nullable()
+    .when('eventType', {
+      is: 'photography',
+      then: schema => schema.required('Submission deadline is required for photography'),
+    }),
+  eventEndDate: yup.string()
+    .nullable()
+    .when('eventType', {
+      is: 'photography',
+      then: schema => schema.required('Event end date is required for photography'),
+    }),
 });
 
 const CreateEventScreen = ({ navigation }) => {
@@ -118,6 +148,11 @@ const CreateEventScreen = ({ navigation }) => {
           difficulty: '',
           timeLimit: '',
           questions: '',
+          maxPhotos: '',
+          themes: '',
+          startingDate: '',
+          submissionDeadline: '',
+          eventEndDate: '',
         }}
         validationSchema={validationSchema}
         onSubmit={handleCreateEvent}
@@ -203,6 +238,51 @@ const CreateEventScreen = ({ navigation }) => {
                 />
                 {touched.questions && errors.questions && <Text style={styles.errorText}>{errors.questions}</Text>}
                 <CustomButton title="Set Sample Questions" onPress={() => handleSetSampleQuestions(setFieldValue)} />
+              </>
+            )}
+            {values.eventType === 'photography' && (
+              <>
+                <TextInput
+                  style={styles.input}
+                  placeholder="Max Photos"
+                  onChangeText={handleChange('maxPhotos')}
+                  onBlur={handleBlur('maxPhotos')}
+                  value={values.maxPhotos}
+                  keyboardType="numeric"
+                />
+                {touched.maxPhotos && errors.maxPhotos && <Text style={styles.errorText}>{errors.maxPhotos}</Text>}
+                <TextInput
+                  style={styles.input}
+                  placeholder="Themes (comma separated)"
+                  onChangeText={handleChange('themes')}
+                  onBlur={handleBlur('themes')}
+                  value={values.themes}
+                />
+                {touched.themes && errors.themes && <Text style={styles.errorText}>{errors.themes}</Text>}
+                <TextInput
+                  style={styles.input}
+                  placeholder="Starting Date"
+                  onChangeText={handleChange('startingDate')}
+                  onBlur={handleBlur('startingDate')}
+                  value={values.startingDate}
+                />
+                {touched.startingDate && errors.startingDate && <Text style={styles.errorText}>{errors.startingDate}</Text>}
+                <TextInput
+                  style={styles.input}
+                  placeholder="Submission Deadline"
+                  onChangeText={handleChange('submissionDeadline')}
+                  onBlur={handleBlur('submissionDeadline')}
+                  value={values.submissionDeadline}
+                />
+                {touched.submissionDeadline && errors.submissionDeadline && <Text style={styles.errorText}>{errors.submissionDeadline}</Text>}
+                <TextInput
+                  style={styles.input}
+                  placeholder="Event End Date"
+                  onChangeText={handleChange('eventEndDate')}
+                  onBlur={handleBlur('eventEndDate')}
+                  value={values.eventEndDate}
+                />
+                {touched.eventEndDate && errors.eventEndDate && <Text style={styles.errorText}>{errors.eventEndDate}</Text>}
               </>
             )}
             {loading ? (
