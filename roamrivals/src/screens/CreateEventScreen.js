@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Picker } from '@react-native-picker/picker';
-import { View, TextInput, StyleSheet, Alert, ActivityIndicator, ScrollView, Text } from 'react-native';
+import { View, TextInput, StyleSheet, Alert, ActivityIndicator, ScrollView, Text, Button } from 'react-native';
 import { Formik } from 'formik';
 import * as yup from 'yup';
 import apiClient from '../api/apiClient';
@@ -10,7 +10,9 @@ const validationSchema = yup.object().shape({
   title: yup.string().required('Title is required'),
   description: yup.string().required('Description is required'),
   startingDate: yup.string().required('Starting date is required'),
+  startingTime: yup.string().required('Starting time is required'),
   eventEndDate: yup.string().required('Event end date is required'),
+  eventEndTime: yup.string().required('Event end time is required'),
   location: yup.string().required('Location is required'),
   eventType: yup.string().required('Event type is required'),
   numberOfQuestions: yup.number()
@@ -55,6 +57,12 @@ const validationSchema = yup.object().shape({
       is: 'photography',
       then: schema => schema.required('Photo submission deadline is required for photography'),
     }),
+  PhotosubmissionTime: yup.string()
+    .nullable()
+    .when('eventType', {
+      is: 'photography',
+      then: schema => schema.required('Photo submission time is required for photography'),
+    }),
 });
 
 const CreateEventScreen = ({ navigation }) => {
@@ -78,9 +86,17 @@ const CreateEventScreen = ({ navigation }) => {
           return;
         }
       }
+
+      const startingDateTime = new Date(`${values.startingDate}T${values.startingTime}:00`);
+      const eventEndDateTime = new Date(`${values.eventEndDate}T${values.eventEndTime}:00`);
+      const photoSubmissionDeadline = new Date(`${values.PhotosubmissionDeadline}T${values.PhotosubmissionTime}:00`);
+
       await apiClient.post('/events', {
         ...values,
         questions: quizQuestions,
+        startingDate: startingDateTime.toISOString(),
+        eventEndDate: eventEndDateTime.toISOString(),
+        PhotosubmissionDeadline: photoSubmissionDeadline.toISOString(),
       });
       Alert.alert('Success', 'Event created successfully');
       navigation.navigate('Events', { refresh: true });
@@ -91,37 +107,6 @@ const CreateEventScreen = ({ navigation }) => {
     }
   };
 
-  const handleSetSampleQuestions = (setFieldValue) => {
-    const sampleQuestions = [
-      {
-        question: "What is the chemical symbol for water?",
-        options: ["H2O", "O2", "CO2", "H2"],
-        correctAnswer: "H2O"
-      },
-      {
-        question: "What planet is known as the Red Planet?",
-        options: ["Earth", "Mars", "Jupiter", "Saturn"],
-        correctAnswer: "Mars"
-      },
-      {
-        question: "What gas do plants absorb from the atmosphere?",
-        options: ["Oxygen", "Hydrogen", "Carbon Dioxide", "Nitrogen"],
-        correctAnswer: "Carbon Dioxide"
-      },
-      {
-        question: "What is the powerhouse of the cell?",
-        options: ["Nucleus", "Ribosome", "Mitochondria", "Golgi apparatus"],
-        correctAnswer: "Mitochondria"
-      },
-      {
-        question: "How many elements are there in the periodic table?",
-        options: ["108", "112", "118", "120"],
-        correctAnswer: "118"
-      }
-    ];
-    setFieldValue('questions', JSON.stringify(sampleQuestions, null, 2));
-  };
-
   return (
     <ScrollView contentContainerStyle={styles.container}>
       {errorMessage ? <Text style={styles.error}>{errorMessage}</Text> : null}
@@ -130,7 +115,9 @@ const CreateEventScreen = ({ navigation }) => {
           title: '',
           description: '',
           startingDate: '',
+          startingTime: '',
           eventEndDate: '',
+          eventEndTime: '',
           location: '',
           eventType: 'general',
           numberOfQuestions: '',
@@ -140,6 +127,7 @@ const CreateEventScreen = ({ navigation }) => {
           maxPhotos: '',
           themes: '',
           PhotosubmissionDeadline: '',
+          PhotosubmissionTime: '',
         }}
         validationSchema={validationSchema}
         onSubmit={handleCreateEvent}
@@ -164,7 +152,7 @@ const CreateEventScreen = ({ navigation }) => {
             {touched.description && errors.description && <Text style={styles.errorText}>{errors.description}</Text>}
             <TextInput
               style={styles.input}
-              placeholder="Starting Date"
+              placeholder="Starting Date (YYYY-MM-DD)"
               onChangeText={handleChange('startingDate')}
               onBlur={handleBlur('startingDate')}
               value={values.startingDate}
@@ -172,12 +160,28 @@ const CreateEventScreen = ({ navigation }) => {
             {touched.startingDate && errors.startingDate && <Text style={styles.errorText}>{errors.startingDate}</Text>}
             <TextInput
               style={styles.input}
-              placeholder="Event End Date"
+              placeholder="Starting Time (HH:MM)"
+              onChangeText={handleChange('startingTime')}
+              onBlur={handleBlur('startingTime')}
+              value={values.startingTime}
+            />
+            {touched.startingTime && errors.startingTime && <Text style={styles.errorText}>{errors.startingTime}</Text>}
+            <TextInput
+              style={styles.input}
+              placeholder="Event End Date (YYYY-MM-DD)"
               onChangeText={handleChange('eventEndDate')}
               onBlur={handleBlur('eventEndDate')}
               value={values.eventEndDate}
             />
             {touched.eventEndDate && errors.eventEndDate && <Text style={styles.errorText}>{errors.eventEndDate}</Text>}
+            <TextInput
+              style={styles.input}
+              placeholder="Event End Time (HH:MM)"
+              onChangeText={handleChange('eventEndTime')}
+              onBlur={handleBlur('eventEndTime')}
+              value={values.eventEndTime}
+            />
+            {touched.eventEndTime && errors.eventEndTime && <Text style={styles.errorText}>{errors.eventEndTime}</Text>}
             <TextInput
               style={styles.input}
               placeholder="Location"
@@ -256,12 +260,20 @@ const CreateEventScreen = ({ navigation }) => {
                 {touched.themes && errors.themes && <Text style={styles.errorText}>{errors.themes}</Text>}
                 <TextInput
                   style={styles.input}
-                  placeholder="Photo Submission Deadline"
+                  placeholder="Photo Submission Deadline (YYYY-MM-DD)"
                   onChangeText={handleChange('PhotosubmissionDeadline')}
                   onBlur={handleBlur('PhotosubmissionDeadline')}
                   value={values.PhotosubmissionDeadline}
                 />
                 {touched.PhotosubmissionDeadline && errors.PhotosubmissionDeadline && <Text style={styles.errorText}>{errors.PhotosubmissionDeadline}</Text>}
+                <TextInput
+                  style={styles.input}
+                  placeholder="Photo Submission Time (HH:MM)"
+                  onChangeText={handleChange('PhotosubmissionTime')}
+                  onBlur={handleBlur('PhotosubmissionTime')}
+                  value={values.PhotosubmissionTime}
+                />
+                {touched.PhotosubmissionTime && errors.PhotosubmissionTime && <Text style={styles.errorText}>{errors.PhotosubmissionTime}</Text>}
               </>
             )}
             {loading ? (
