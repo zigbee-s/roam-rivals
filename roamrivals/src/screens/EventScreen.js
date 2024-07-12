@@ -1,4 +1,3 @@
-// src/screens/EventScreen.js
 import React, { useState, useEffect, useContext, useCallback } from 'react';
 import { View, Text, FlatList, StyleSheet, ActivityIndicator, Button, Alert, Image } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
