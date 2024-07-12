@@ -17,14 +17,14 @@ async function uploadPhoto(req, res) {
 
   try {
     // Upload the photo to S3
-    const imageUrl = await uploadToS3(req.file);
+    const imageKey = await uploadToS3(req.file);
 
     const photoEvent = await PhotographyEvent.findById(event);
     if (!photoEvent) {
       return res.status(404).json({ message: 'Event not found' });
     }
 
-    const newPhoto = new Photo({ title, description, event, imageUrl, uploadedBy });
+    const newPhoto = new Photo({ title, description, event, imageKey, uploadedBy });
     await newPhoto.save();
 
     photoEvent.photos.push(newPhoto._id);
@@ -44,7 +44,7 @@ async function getAllPhotos(req, res) {
     const photosWithUrls = await Promise.all(
       photos.map(async photo => ({
         ...photo.toObject(),
-        imageUrl: await getPresignedUrl(photo.imageUrl),
+        imageUrl: await getPresignedUrl(photo.imageKey),
       }))
     );
     res.status(200).json(photosWithUrls);
@@ -65,7 +65,7 @@ async function getPhotosByEvent(req, res) {
     const photosWithUrls = await Promise.all(
       photos.map(async photo => ({
         ...photo.toObject(),
-        imageUrl: await getPresignedUrl(photo.imageUrl),
+        imageUrl: await getPresignedUrl(photo.imageKey),
       }))
     );
     res.status(200).json(photosWithUrls);
