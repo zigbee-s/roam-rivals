@@ -1,10 +1,11 @@
 // File: backend/controllers/photoController.js
 
 const Photo = require('../models/photoModel');
-const { getPresignedUrl } = require('../utils/s3Utils');
+const { uploadToS3, getPresignedUrl } = require('../utils/s3Utils');
 const { PhotographyEvent } = require('../models/eventModel');
 const logger = require('../logger');
 const { sendEmail } = require('../utils/emailService');
+const User = require('../models/userModel'); // Make sure to include User model if not already included
 
 async function uploadPhoto(req, res) {
   const { title, description, event } = req.body;
@@ -14,9 +15,10 @@ async function uploadPhoto(req, res) {
     return res.status(400).json({ message: 'No file uploaded' });
   }
 
-  const imageUrl = req.file.key; // This should be the key, not the full URL
-
   try {
+    // Upload the photo to S3
+    const imageUrl = await uploadToS3(req.file);
+
     const photoEvent = await PhotographyEvent.findById(event);
     if (!photoEvent) {
       return res.status(404).json({ message: 'Event not found' });
