@@ -11,6 +11,8 @@ async function uploadPhoto(req, res) {
   const { title, description, event } = req.body;
   const uploadedBy = req.user.userId;
 
+  console.log(req.body)
+  
   if (!req.file) {
     return res.status(400).json({ message: 'No file uploaded' });
   }
