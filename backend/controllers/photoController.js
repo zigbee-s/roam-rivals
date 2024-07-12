@@ -1,7 +1,10 @@
+// File: backend/controllers/photoController.js
+
 const Photo = require('../models/photoModel');
-const { PhotographyEvent } = require('../models/eventModel'); // Correctly import the PhotographyEvent model
+const { getPresignedUrl } = require('../utils/s3Utils');
+const { PhotographyEvent } = require('../models/eventModel');
 const logger = require('../logger');
-const { sendEmail } = require('../utils/emailService'); // Ensure you have an email service utility
+const { sendEmail } = require('../utils/emailService');
 
 async function uploadPhoto(req, res) {
   const { title, description, event } = req.body;
@@ -11,7 +14,7 @@ async function uploadPhoto(req, res) {
     return res.status(400).json({ message: 'No file uploaded' });
   }
 
-  const imageUrl = req.file.location; // This URL will be the S3 URL of the uploaded file
+  const imageUrl = req.file.key; // This should be the key, not the full URL
 
   try {
     const photoEvent = await PhotographyEvent.findById(event);
@@ -36,7 +39,13 @@ async function uploadPhoto(req, res) {
 async function getAllPhotos(req, res) {
   try {
     const photos = await Photo.find().populate('uploadedBy', 'name username').populate('event', 'title');
-    res.status(200).json(photos);
+    const photosWithUrls = await Promise.all(
+      photos.map(async photo => ({
+        ...photo.toObject(),
+        imageUrl: await getPresignedUrl(photo.imageUrl),
+      }))
+    );
+    res.status(200).json(photosWithUrls);
   } catch (error) {
     logger.error('Failed to fetch photos', error);
     res.status(500).json({ message: 'Failed to fetch photos', error: error.message });
@@ -51,7 +60,13 @@ async function getPhotosByEvent(req, res) {
     if (!photos || photos.length === 0) {
       return res.status(404).json({ message: 'No photos found for this event' });
     }
-    res.status(200).json(photos);
+    const photosWithUrls = await Promise.all(
+      photos.map(async photo => ({
+        ...photo.toObject(),
+        imageUrl: await getPresignedUrl(photo.imageUrl),
+      }))
+    );
+    res.status(200).json(photosWithUrls);
   } catch (error) {
     logger.error('Failed to fetch photos for event', error);
     res.status(500).json({ message: 'Failed to fetch photos for event', error: error.message });
@@ -112,7 +127,7 @@ async function determineWinner(req, res) {
 
     if (winningPhoto) {
       const user = await User.findById(winningPhoto.uploadedBy);
-      await sendEmail(user.email, 'Congratulations! You have won the photography event', `Your photo titled \"${winningPhoto.title}\" has won with ${maxLikes} likes.`);
+      await sendEmail(user.email, 'Congratulations! You have won the photography event', `Your photo titled "${winningPhoto.title}" has won with ${maxLikes} likes.`);
       winningPhoto.isWinner = true;
       await winningPhoto.save();
       res.status(200).json({ message: 'Winner determined and notified', winningPhoto });

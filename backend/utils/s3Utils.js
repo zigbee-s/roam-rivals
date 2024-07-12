@@ -1,3 +1,5 @@
+// File: backend/utils/s3Utils.js
+
 const { S3Client, GetObjectCommand } = require("@aws-sdk/client-s3");
 const { getSignedUrl } = require("@aws-sdk/s3-request-presigner");
 const multer = require('multer');
@@ -6,7 +8,6 @@ const { S3_BUCKET_NAME, AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY } = require('..
 
 const s3Client = new S3Client({
   region: 'ap-southeast-2', // Change the region as needed
-  endpoint: 'https://s3.ap-southeast-2.amazonaws.com', // Replace with your specific endpoint
   credentials: {
     accessKeyId: AWS_ACCESS_KEY_ID,
     secretAccessKey: AWS_SECRET_ACCESS_KEY,
@@ -28,7 +29,7 @@ const upload = multer({
 });
 
 // Function to generate a pre-signed URL
-const generateSignedUrl = async (key) => {
+const getPresignedUrl = async (key) => {
   const params = {
     Bucket: S3_BUCKET_NAME,
     Key: key,
@@ -40,4 +41,4 @@ const generateSignedUrl = async (key) => {
   return signedUrl;
 };
 
-module.exports = { upload, generateSignedUrl };
+module.exports = { upload, getPresignedUrl };
