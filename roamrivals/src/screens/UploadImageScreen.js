@@ -1,5 +1,3 @@
-// File: roamrivals/src/screens/UploadImageScreen.js
-
 import React, { useState } from 'react';
 import { View, Text, TextInput, Button, StyleSheet, Image, Alert } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
@@ -22,6 +20,9 @@ const UploadImageScreen = ({ navigation, route }) => {
 
     if (!result.canceled && result.assets && result.assets.length > 0) {
       setImage(result.assets[0].uri);
+      console.log('Selected image URI:', result.assets[0].uri); // Debug log
+    } else {
+      console.log('Image picking canceled or no assets found');
     }
   };
 
@@ -71,6 +72,12 @@ const UploadImageScreen = ({ navigation, route }) => {
         uri: image,
         name: `photo.${image.split('.').pop()}`,
         type: imageType,
+      });
+
+      // Debugging FormData content
+      console.log('FormData contents:');
+      formData.forEach((value, key) => {
+        console.log(`${key}: ${value}`);
       });
 
       await uploadPhoto(formData);
