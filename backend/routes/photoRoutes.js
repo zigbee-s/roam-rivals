@@ -3,7 +3,7 @@
 const express = require('express');
 const { uploadPhoto, getAllPhotos, getPhotosByEvent, likePhoto, determineWinner } = require('../controllers/photoController');
 const { authMiddleware } = require('../middlewares/authMiddleware');
-const { upload } = require('../utils/s3Utils'); // Ensure correct path to s3Utils
+const upload = require('../middlewares/uploadMiddleware'); // Adjust the path according to your project structure
 
 const router = express.Router();
 

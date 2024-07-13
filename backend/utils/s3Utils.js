@@ -57,4 +57,4 @@ const getPresignedUrl = async (key) => {
   return signedUrl;
 };
 
-module.exports = { upload, uploadToS3, getPresignedUrl };
+module.exports = { uploadToS3, getPresignedUrl };

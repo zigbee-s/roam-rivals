@@ -37,7 +37,7 @@ const EventScreen = ({ navigation }) => {
     setPhotoLoading(true);
     setError(null);
     try {
-      const response = await apiClient.get(`/events/${eventId}/photos`);
+      const response = await apiClient.get(`/photos/event/${eventId}`);
       setPhotos(response.data);
     } catch (error) {
       if (!error.response) {
@@ -119,6 +119,10 @@ const EventScreen = ({ navigation }) => {
                       )}
                     />
                   )}
+                  <Button 
+                    title="Submit a Photo"
+                    onPress={() => navigation.navigate('UploadImage', { eventId: selectedEvent._id })}
+                  />
                 </>
               )}
             </>

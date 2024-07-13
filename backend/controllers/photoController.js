@@ -11,26 +11,32 @@ async function uploadPhoto(req, res) {
   const { title, description, event } = req.body;
   const uploadedBy = req.user.userId;
 
-  console.log(req.body)
-  
+  console.log('Request body:', req.body);
+  console.log('File info:', req.file); // Add this line to debug
+
   if (!req.file) {
+    logger.error('No file uploaded');
     return res.status(400).json({ message: 'No file uploaded' });
   }
 
   try {
-    // Upload the photo to S3
-    const imageKey = await uploadToS3(req.file);
-
     const photoEvent = await PhotographyEvent.findById(event);
     if (!photoEvent) {
       return res.status(404).json({ message: 'Event not found' });
     }
 
+    // Upload the photo to S3
+    console.log('Uploading photo to S3...');
+    const imageKey = await uploadToS3(req.file);
+    console.log('Photo uploaded to S3 with key:', imageKey);
+
     const newPhoto = new Photo({ title, description, event, imageKey, uploadedBy });
     await newPhoto.save();
+    console.log('New photo saved to database');
 
     photoEvent.photos.push(newPhoto._id);
     await photoEvent.save();
+    console.log('Photo event updated with new photo');
 
     logger.info(`Photo uploaded by user: ${uploadedBy} for event: ${event}`);
     res.status(201).json(newPhoto);
@@ -39,6 +45,7 @@ async function uploadPhoto(req, res) {
     res.status(500).json({ message: 'Failed to upload photo', error: error.message });
   }
 }
+
 
 async function getAllPhotos(req, res) {
   try {

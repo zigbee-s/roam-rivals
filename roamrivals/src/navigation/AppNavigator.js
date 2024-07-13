@@ -11,6 +11,7 @@ import HomeScreen from '../screens/HomeScreen';
 import EventScreen from '../screens/EventScreen';
 import CreateEventScreen from '../screens/CreateEventScreen';
 import AddQuestionsScreen from '../screens/AddQuestionsScreen';
+import UploadImageScreen from '../screens/UploadImageScreen'; // Import the UploadImageScreen
 import { getToken } from '../api/tokenStorage';
 import apiClient from '../api/apiClient';
 import { navigationRef } from '../api/navigationRef';
@@ -92,6 +93,7 @@ const AppNavigator = () => {
             </Stack.Screen>
             <Stack.Screen name="CreateEvent" component={CreateEventScreen} options={profileButton} />
             <Stack.Screen name="AddQuestions" component={AddQuestionsScreen} />
+            <Stack.Screen name="UploadImage" component={UploadImageScreen} /> 
           </Stack.Navigator>
         )}
       </NetworkStatus>
