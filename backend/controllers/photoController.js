@@ -1,18 +1,15 @@
 // File: backend/controllers/photoController.js
 
 const Photo = require('../models/photoModel');
-const { uploadToS3, getPresignedUrl } = require('../utils/s3Utils');
+const { getPresignedUrl } = require('../utils/s3Utils');
 const { PhotographyEvent } = require('../models/eventModel');
 const logger = require('../logger');
 const { sendEmail } = require('../utils/emailService');
-const User = require('../models/userModel'); // Make sure to include User model if not already included
+const User = require('../models/userModel'); // Ensure to include User model
 
 async function uploadPhoto(req, res) {
   const { title, description, event } = req.body;
   const uploadedBy = req.user.userId;
-
-  console.log('Request body:', req.body);
-  console.log('File info:', req.file); // Add this line to debug
 
   if (!req.file) {
     logger.error('No file uploaded');
@@ -25,18 +22,11 @@ async function uploadPhoto(req, res) {
       return res.status(404).json({ message: 'Event not found' });
     }
 
-    // Upload the photo to S3
-    console.log('Uploading photo to S3...');
-    const imageKey = await uploadToS3(req.file);
-    console.log('Photo uploaded to S3 with key:', imageKey);
-
-    const newPhoto = new Photo({ title, description, event, imageKey, uploadedBy });
+    const newPhoto = new Photo({ title, description, event, imageKey: req.file.key, uploadedBy });
     await newPhoto.save();
-    console.log('New photo saved to database');
 
     photoEvent.photos.push(newPhoto._id);
     await photoEvent.save();
-    console.log('Photo event updated with new photo');
 
     logger.info(`Photo uploaded by user: ${uploadedBy} for event: ${event}`);
     res.status(201).json(newPhoto);
@@ -46,14 +36,13 @@ async function uploadPhoto(req, res) {
   }
 }
 
-
 async function getAllPhotos(req, res) {
   try {
     const photos = await Photo.find().populate('uploadedBy', 'name username').populate('event', 'title');
     const photosWithUrls = await Promise.all(
       photos.map(async photo => ({
         ...photo.toObject(),
-        imageUrl: await getPresignedUrl(photo.imageKey),
+        imageUrl: await getPresignedUrl(photo.imageKey, 60 * 60), // 1 hour expiration
       }))
     );
     res.status(200).json(photosWithUrls);
@@ -74,7 +63,7 @@ async function getPhotosByEvent(req, res) {
     const photosWithUrls = await Promise.all(
       photos.map(async photo => ({
         ...photo.toObject(),
-        imageUrl: await getPresignedUrl(photo.imageKey),
+        imageUrl: await getPresignedUrl(photo.imageKey, 60 * 60), // 1 hour expiration
       }))
     );
     res.status(200).json(photosWithUrls);

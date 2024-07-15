@@ -17,5 +17,6 @@ module.exports = {
   TEMPORARY_TOKEN_SECRET: process.env.TEMPORARY_TOKEN_SECRET,
   AWS_ACCESS_KEY_ID: process.env.AWS_ACCESS_KEY_ID,
   AWS_SECRET_ACCESS_KEY: process.env.AWS_SECRET_ACCESS_KEY,
+  AWS_REGION: process.env.AWS_REGION || 'ap-southeast-2',
   S3_BUCKET_NAME: process.env.S3_BUCKET_NAME,
 };
