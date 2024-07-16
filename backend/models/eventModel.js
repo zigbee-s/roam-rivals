@@ -1,5 +1,4 @@
 // eventModel.js
-
 const mongoose = require('mongoose');
 const { Schema } = mongoose;
 
@@ -13,6 +12,17 @@ const eventSchema = new Schema({
   eventType: { type: String, required: true, enum: ['general', 'quiz', 'photography'] },
   participants: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
 }, { discriminatorKey: 'eventType' });
+
+// General event status methods
+eventSchema.methods.isOpened = function () {
+  const now = new Date();
+  return now >= this.startingDate && now <= this.eventEndDate;
+};
+
+eventSchema.methods.isClosed = function () {
+  const now = new Date();
+  return now > this.eventEndDate;
+};
 
 const Event = mongoose.model('Event', eventSchema);
 
@@ -37,6 +47,12 @@ const photographyEventSchema = new Schema({
   PhotosubmissionDeadline: { type: Date, required: true },
   photos: [{ type: Schema.Types.ObjectId, ref: 'Photo' }]
 });
+
+// Photography event status methods
+photographyEventSchema.methods.isSubmissionStarted = function () {
+  const now = new Date();
+  return now >= this.PhotosubmissionDeadline;
+};
 
 const PhotographyEvent = Event.discriminator('photography', photographyEventSchema);
 

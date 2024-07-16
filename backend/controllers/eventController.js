@@ -136,4 +136,50 @@ async function registerEvent(req, res) {
   }
 }
 
-module.exports = { createEvent, getEvents, getEventById, updateEvent, deleteEvent, registerEvent };
+async function getEventStatus(req, res) {
+  const { eventId } = req.params;
+
+  try {
+    const event = await Event.findById(eventId);
+    if (!event) {
+      logger.warn(`Event not found: ${eventId}`);
+      return res.status(404).json({ message: 'Event not found' });
+    }
+
+    const status = {
+      isOpened: event.isOpened(),
+      isClosed: event.isClosed(),
+    };
+
+    if (event.eventType === 'photography') {
+      status.isSubmissionStarted = event.isSubmissionStarted();
+    }
+
+    res.status(200).json(status);
+  } catch (error) {
+    logger.error('Failed to fetch event status', error);
+    res.status(500).json({ message: 'Failed to fetch event status', error: error.message });
+  }
+}
+
+async function checkUserRegistration(req, res) {
+  const { eventId } = req.params;
+  const userId = req.user.userId; // Assuming user ID is available in req.user
+
+  try {
+    const event = await Event.findById(eventId).populate('participants');
+    if (!event) {
+      logger.warn(`Event not found: ${eventId}`);
+      return res.status(404).json({ message: 'Event not found' });
+    }
+
+    const isRegistered = event.participants.some(participant => participant._id.equals(userId));
+
+    res.status(200).json({ isRegistered });
+  } catch (error) {
+    logger.error('Failed to check user registration', error);
+    res.status(500).json({ message: 'Failed to check user registration', error: error.message });
+  }
+}
+
+module.exports = { createEvent, getEvents, getEventById, updateEvent, deleteEvent, registerEvent, getEventStatus, checkUserRegistration  };
