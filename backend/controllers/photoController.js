@@ -1,42 +1,54 @@
-// File: backend/controllers/photoController.js
-
 const Photo = require('../models/photoModel');
-const { getPresignedUrl } = require('../utils/s3Utils');
+const { getPresignedUrl, getUploadPresignedUrl } = require('../utils/s3Utils');
 const { PhotographyEvent } = require('../models/eventModel');
 const logger = require('../logger');
 const { sendEmail } = require('../utils/emailService');
 const User = require('../models/userModel'); // Ensure to include User model
 
-async function uploadPhoto(req, res) {
+async function generateUploadUrl(req, res) {
+  const { eventId } = req.params;
   const { title, description } = req.body;
-  const { eventId } = req.params; // Extract eventId from URL parameters
   const uploadedBy = req.user.userId;
 
-  if (!req.file) {
-    logger.error('No file uploaded');
-    return res.status(400).json({ message: 'No file uploaded' });
-  }
-
   try {
-    const photoEvent = await PhotographyEvent.findById(eventId); // Use eventId from URL parameters
+    const photoEvent = await PhotographyEvent.findById(eventId);
     if (!photoEvent) {
       return res.status(404).json({ message: 'Event not found' });
     }
 
-    const newPhoto = new Photo({ title, description, event: eventId, imageKey: req.file.key, uploadedBy });
+    const key = `photos/${Date.now().toString()}_${uploadedBy}.jpg`; // Or use any other naming strategy
+
+    const uploadUrl = await getUploadPresignedUrl(key, 3600); // URL valid for 1 hour
+
+    res.status(201).json({ uploadUrl, key, title, description, eventId, uploadedBy });
+  } catch (error) {
+    logger.error('Failed to generate upload URL', error);
+    res.status(500).json({ message: 'Failed to generate upload URL', error: error.message });
+  }
+}
+
+async function confirmUpload(req, res) {
+  const { key, title, description, eventId, uploadedBy } = req.body;
+  console.log(req.body)
+  try {
+    const photoEvent = await PhotographyEvent.findById(eventId);
+    if (!photoEvent) {
+      return res.status(404).json({ message: 'Event not found' });
+    }
+
+    const newPhoto = new Photo({ title, description, event: eventId, imageKey: key, uploadedBy });
     await newPhoto.save();
 
     photoEvent.photos.push(newPhoto._id);
     await photoEvent.save();
 
-    logger.info(`Photo uploaded by user: ${uploadedBy} for event: ${eventId}`);
+    logger.info(`Photo metadata saved for user: ${uploadedBy} for event: ${eventId}`);
     res.status(201).json(newPhoto);
   } catch (error) {
-    logger.error('Failed to upload photo', error);
-    res.status(500).json({ message: 'Failed to upload photo', error: error.message });
+    logger.error('Failed to save photo metadata', error);
+    res.status(500).json({ message: 'Failed to save photo metadata', error: error.message });
   }
 }
-
 
 async function getAllPhotos(req, res) {
   try {
@@ -129,7 +141,7 @@ async function determineWinner(req, res) {
 
     if (winningPhoto) {
       const user = await User.findById(winningPhoto.uploadedBy);
-      await sendEmail(user.email, 'Congratulations! You have won the photography event', `Your photo titled "${winningPhoto.title}" has won with ${maxLikes} likes.`);
+      await sendEmail(user.email, 'Congratulations! You have won the photography event', `Your photo titled \"${winningPhoto.title}\" has won with ${maxLikes} likes.`);
       winningPhoto.isWinner = true;
       await winningPhoto.save();
       res.status(200).json({ message: 'Winner determined and notified', winningPhoto });
@@ -142,4 +154,4 @@ async function determineWinner(req, res) {
   }
 }
 
-module.exports = { uploadPhoto, getAllPhotos, getPhotosByEvent, likePhoto, determineWinner };
+module.exports = { generateUploadUrl, confirmUpload, getAllPhotos, getPhotosByEvent, likePhoto, determineWinner };

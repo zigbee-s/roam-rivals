@@ -44,15 +44,6 @@ const UploadImageScreen = ({ navigation, route }) => {
     }
   };
 
-  const uploadPhoto = async (eventId, formData) => {
-    const response = await apiClient.post(`/photos/upload/${eventId}`, formData, {
-      headers: {
-        'Content-Type': 'multipart/form-data',
-      },
-    });
-    return response.data;
-  };
-
   const handleSubmit = async () => {
     if (!title || !description || !image) {
       Alert.alert('Please fill all fields and select an image');
@@ -61,18 +52,42 @@ const UploadImageScreen = ({ navigation, route }) => {
 
     setUploading(true);
     try {
-      const imageType = getImageType(image);
+      // Step 1: Request a pre-signed URL from the backend
+      const presignedUrlResponse = await apiClient.post(
+        `/photos/generate-upload-url/${eventId}`,
+        {
+          title,
+          description,
+        }
+      );
 
-      const formData = new FormData();
-      formData.append('title', title);
-      formData.append('description', description);
-      formData.append('photo', {
-        uri: image,
-        name: `photo.${image.split('.').pop()}`,
-        type: imageType,
+      const { uploadUrl, key, eventId: eventID, uploadedBy } = presignedUrlResponse.data;
+
+      // Step 2: Upload the image to S3 using the pre-signed URL
+      const imageType = getImageType(image);
+      const imageResponse = await fetch(image);
+      const blob = await imageResponse.blob();
+
+      await fetch(uploadUrl, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': imageType,
+        },
+        body: blob,
       });
 
-      await uploadPhoto(eventId, formData);
+      // Step 3: Confirm the upload and save metadata in the backend
+      await apiClient.post(
+        '/photos/confirm-upload',
+        {
+          key,
+          title,
+          description,
+          eventId: eventID,
+          uploadedBy,
+        }
+      );
+
       Alert.alert('Photo uploaded successfully');
       navigation.navigate('Events'); // Navigate to the Events screen
     } catch (error) {
