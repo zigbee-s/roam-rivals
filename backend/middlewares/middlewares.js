@@ -1,4 +1,4 @@
-//,iddlewares/middleware.js
+//middlewares/middleware.js
 const cors = require('cors');
 const helmet = require('helmet');
 const express = require('express');

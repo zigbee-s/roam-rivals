@@ -80,9 +80,7 @@ async function completeSignup(req, res) {
 
 // Updated login function
 async function login(req, res) {
-  console.log("##################################")
   const { email, password, useOtp } = req.body;
-  console.log("###############################", req.body)
   const idempotencyKey = req.idempotencyKey;
 
   try {

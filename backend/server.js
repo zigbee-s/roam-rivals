@@ -1,5 +1,6 @@
+// File: server.js
+
 const express = require('express');
-const cors = require('cors');
 const connectDB = require('./db/db');
 const authRoutes = require('./routes/authRoutes');
 const userRoutes = require('./routes/userRoutes');
@@ -9,13 +10,12 @@ const rateLimit = require('express-rate-limit');
 const expressWinston = require('express-winston');
 const winston = require('winston');
 const logger = require('./logger');
+const middlewares = require('./middlewares/middlewares'); // Import the common middlewares
 
 const app = express();
 
-// Middleware
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
-app.use(cors());
+// Apply common middlewares
+app.use(middlewares);
 
 // Rate Limiting
 const limiter = rateLimit({
@@ -25,7 +25,7 @@ const limiter = rateLimit({
 });
 app.use(limiter);
 
-// Request logging middleware
+// Request logging middleware (commented out)
 // app.use(expressWinston.logger({
 //   transports: [
 //     new winston.transports.Console(),

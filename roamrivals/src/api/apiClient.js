@@ -10,7 +10,7 @@ const prodURL = 'https://roam-rivals.onrender.com';
 
 let baseURL = process.env.NODE_ENV === 'production' ? uatURL : devURL;
 
-baseURL = uatURL;
+baseURL = devURL;
 console.log("Base URL: " + baseURL);
 
 const apiClient = axios.create({
