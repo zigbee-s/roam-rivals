@@ -44,8 +44,8 @@ const UploadImageScreen = ({ navigation, route }) => {
     }
   };
 
-  const uploadPhoto = async (formData) => {
-    const response = await apiClient.post('/photos/upload', formData, {
+  const uploadPhoto = async (eventId, formData) => {
+    const response = await apiClient.post(`/photos/upload/${eventId}`, formData, {
       headers: {
         'Content-Type': 'multipart/form-data',
       },
@@ -66,14 +66,13 @@ const UploadImageScreen = ({ navigation, route }) => {
       const formData = new FormData();
       formData.append('title', title);
       formData.append('description', description);
-      formData.append('event', eventId);
       formData.append('photo', {
         uri: image,
         name: `photo.${image.split('.').pop()}`,
         type: imageType,
       });
 
-      await uploadPhoto(formData);
+      await uploadPhoto(eventId, formData);
       Alert.alert('Photo uploaded successfully');
       navigation.navigate('Events'); // Navigate to the Events screen
     } catch (error) {

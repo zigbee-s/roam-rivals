@@ -8,7 +8,8 @@ const { sendEmail } = require('../utils/emailService');
 const User = require('../models/userModel'); // Ensure to include User model
 
 async function uploadPhoto(req, res) {
-  const { title, description, event } = req.body;
+  const { title, description } = req.body;
+  const { eventId } = req.params; // Extract eventId from URL parameters
   const uploadedBy = req.user.userId;
 
   if (!req.file) {
@@ -17,24 +18,25 @@ async function uploadPhoto(req, res) {
   }
 
   try {
-    const photoEvent = await PhotographyEvent.findById(event);
+    const photoEvent = await PhotographyEvent.findById(eventId); // Use eventId from URL parameters
     if (!photoEvent) {
       return res.status(404).json({ message: 'Event not found' });
     }
 
-    const newPhoto = new Photo({ title, description, event, imageKey: req.file.key, uploadedBy });
+    const newPhoto = new Photo({ title, description, event: eventId, imageKey: req.file.key, uploadedBy });
     await newPhoto.save();
 
     photoEvent.photos.push(newPhoto._id);
     await photoEvent.save();
 
-    logger.info(`Photo uploaded by user: ${uploadedBy} for event: ${event}`);
+    logger.info(`Photo uploaded by user: ${uploadedBy} for event: ${eventId}`);
     res.status(201).json(newPhoto);
   } catch (error) {
     logger.error('Failed to upload photo', error);
     res.status(500).json({ message: 'Failed to upload photo', error: error.message });
   }
 }
+
 
 async function getAllPhotos(req, res) {
   try {
