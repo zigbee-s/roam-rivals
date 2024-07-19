@@ -1,14 +1,16 @@
 // File: backend/routes/photoRoutes.js
 
 const express = require('express');
-const { generateUploadUrl, confirmUpload, getAllPhotos, getPhotosByEvent, likePhoto, determineWinner } = require('../controllers/photoController');
+const { getThemes, generateUploadUrl, confirmUpload, getAllPhotos, getPhotosByEvent, likePhoto, determineWinner } = require('../controllers/photoController');
 const { authMiddleware } = require('../middlewares/authMiddleware');
 const validateEventId = require('../middlewares/validateEventId'); // Import the middleware
 
 const router = express.Router();
 
 router.post('/generate-upload-url/:eventId', authMiddleware, validateEventId('photography'), generateUploadUrl);
-router.post('/confirm-upload', authMiddleware, confirmUpload);
+router.post('/confirm-upload/:eventId', authMiddleware, validateEventId('photography'), confirmUpload);
+
+router.get('/:eventId/themes', authMiddleware, getThemes);
 
 router.get('/', getAllPhotos);
 router.get('/event/:eventId', validateEventId('photography'), getPhotosByEvent); // Add middleware here

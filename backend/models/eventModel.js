@@ -1,4 +1,3 @@
-// eventModel.js
 const mongoose = require('mongoose');
 const { Schema } = mongoose;
 
@@ -43,15 +42,15 @@ const QuizEvent = Event.discriminator('quiz', quizEventSchema);
 // Photography Event Schema
 const photographyEventSchema = new Schema({
   maxPhotos: { type: Number, required: true },
-  themes: [{ type: String, required: true }],
-  PhotosubmissionDeadline: { type: Date, required: true },
+  themes: [{ type: String, required: true }], // Ensure themes are properly defined
+  photoSubmissionDeadline: { type: Date, required: true },
   photos: [{ type: Schema.Types.ObjectId, ref: 'Photo' }]
 });
 
 // Photography event status methods
 photographyEventSchema.methods.isSubmissionStarted = function () {
   const now = new Date();
-  return now >= this.PhotosubmissionDeadline;
+  return now >= this.photoSubmissionDeadline;
 };
 
 const PhotographyEvent = Event.discriminator('photography', photographyEventSchema);

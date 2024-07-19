@@ -1,14 +1,28 @@
-import React, { useState } from 'react';
-import { View, Text, TextInput, Button, StyleSheet, Image, Alert } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, Text, Button, StyleSheet, Image, Alert } from 'react-native';
+import { Picker } from '@react-native-picker/picker';
 import * as ImagePicker from 'expo-image-picker';
 import apiClient from '../api/apiClient';
 
 const UploadImageScreen = ({ navigation, route }) => {
   const { eventId } = route.params;
-  const [title, setTitle] = useState('');
-  const [description, setDescription] = useState('');
+  const [themes, setThemes] = useState([]);
+  const [themeChosen, setThemeChosen] = useState('');
   const [image, setImage] = useState(null);
   const [uploading, setUploading] = useState(false);
+
+  useEffect(() => {
+    const fetchThemes = async () => {
+      try {
+        const response = await apiClient.get(`/photos/${eventId}/themes`);
+        setThemes(response.data.themes);
+      } catch (error) {
+        Alert.alert('Failed to load themes', error.message);
+      }
+    };
+
+    fetchThemes();
+  }, [eventId]);
 
   const pickImage = async () => {
     const result = await ImagePicker.launchImageLibraryAsync({
@@ -45,8 +59,8 @@ const UploadImageScreen = ({ navigation, route }) => {
   };
 
   const handleSubmit = async () => {
-    if (!title || !description || !image) {
-      Alert.alert('Please fill all fields and select an image');
+    if (!themeChosen || !image) {
+      Alert.alert('Please choose a theme and select an image');
       return;
     }
 
@@ -55,10 +69,7 @@ const UploadImageScreen = ({ navigation, route }) => {
       // Step 1: Request a pre-signed URL from the backend
       const presignedUrlResponse = await apiClient.post(
         `/photos/generate-upload-url/${eventId}`,
-        {
-          title,
-          description,
-        }
+        { themeChosen }
       );
 
       const { uploadUrl, key, eventId: eventID, uploadedBy } = presignedUrlResponse.data;
@@ -78,13 +89,12 @@ const UploadImageScreen = ({ navigation, route }) => {
 
       // Step 3: Confirm the upload and save metadata in the backend
       await apiClient.post(
-        '/photos/confirm-upload',
+        `/photos/confirm-upload/${eventID}`,
         {
           key,
-          title,
-          description,
           eventId: eventID,
           uploadedBy,
+          themeChosen,
         }
       );
 
@@ -99,23 +109,21 @@ const UploadImageScreen = ({ navigation, route }) => {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.label}>Title</Text>
-      <TextInput
-        style={styles.input}
-        value={title}
-        onChangeText={setTitle}
-        placeholder="Enter title"
-      />
-      <Text style={styles.label}>Description</Text>
-      <TextInput
-        style={styles.input}
-        value={description}
-        onChangeText={setDescription}
-        placeholder="Enter description"
-      />
+      <Text style={styles.label}>Choose a Theme</Text>
+      <Picker
+        selectedValue={themeChosen}
+        onValueChange={(itemValue) => setThemeChosen(itemValue)}
+        style={styles.picker}
+        enabled={themes.length > 0} // Disable picker if there are no themes
+      >
+        <Picker.Item label="Select a theme" value="" />
+        {themes.map((theme, index) => (
+          <Picker.Item key={index} label={theme} value={theme} />
+        ))}
+      </Picker>
       <Button title="Pick an image from gallery" onPress={pickImage} />
       {image && <Image source={{ uri: image }} style={styles.image} />}
-      <Button title={uploading ? "Uploading..." : "Upload Photo"} onPress={handleSubmit} disabled={uploading} />
+      <Button title={uploading ? "Uploading..." : "Upload Photo"} onPress={handleSubmit} disabled={uploading || themes.length === 0} />
     </View>
   );
 };
@@ -130,13 +138,10 @@ const styles = StyleSheet.create({
     fontSize: 18,
     marginVertical: 8,
   },
-  input: {
-    borderWidth: 1,
-    borderColor: '#ccc',
-    borderRadius: 4,
-    padding: 12,
-    marginVertical: 8,
-    fontSize: 16,
+  picker: {
+    height: 50,
+    width: '100%',
+    marginBottom: 16,
   },
   image: {
     width: '100%',

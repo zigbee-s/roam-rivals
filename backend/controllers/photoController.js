@@ -5,10 +5,37 @@ const logger = require('../logger');
 const { sendEmail } = require('../utils/emailService');
 const User = require('../models/userModel'); // Ensure to include User model
 
-async function generateUploadUrl(req, res) {
+const generateS3Key = (uploadedBy) => {
+  return `photos/${Date.now().toString()}_${uploadedBy}.jpg`;
+};
+
+
+const getThemes = async (req, res) => {
   const { eventId } = req.params;
-  const { title, description } = req.body;
+  
+    try {
+      const event = await PhotographyEvent.findById(eventId);
+      if (!event) {
+        return res.status(404).json({ message: 'Event not found' });
+      }
+  
+      res.status(200).json({ themes: event.themes });
+    } catch (error) {
+      logger.error('Failed to fetch themes', error);
+      res.status(500).json({ message: 'Failed to fetch themes', error: error.message });
+    }
+  };
+
+
+const generateUploadUrl = async (req, res) => {
+  const { eventId } = req.params;
+  const { themeChosen } = req.body;
   const uploadedBy = req.user.userId;
+
+  // Validate input
+  if (!eventId || !themeChosen) {
+    return res.status(400).json({ message: 'Event ID and themeChosen are required' });
+  }
 
   try {
     const photoEvent = await PhotographyEvent.findById(eventId);
@@ -16,39 +43,70 @@ async function generateUploadUrl(req, res) {
       return res.status(404).json({ message: 'Event not found' });
     }
 
-    const key = `photos/${Date.now().toString()}_${uploadedBy}.jpg`; // Or use any other naming strategy
+    // Check if the chosen theme is allowed
+    if (!photoEvent.themes.includes(themeChosen)) {
+      return res.status(400).json({ message: 'Invalid theme chosen' });
+    }
 
-    const uploadUrl = await getUploadPresignedUrl(key, 3600); // URL valid for 1 hour
+    if (photoEvent.photos.length >= photoEvent.maxPhotos) {
+      return res.status(400).json({ message: 'Max photos limit reached for this event' });
+    }
 
-    res.status(201).json({ uploadUrl, key, title, description, eventId, uploadedBy });
+    const key = generateS3Key(uploadedBy);
+
+    const uploadUrl = await getUploadPresignedUrl(key, 3600, { themeChosen }); // URL valid for 1 hour
+
+    res.status(201).json({ uploadUrl, key, eventId, uploadedBy, themeChosen });
   } catch (error) {
     logger.error('Failed to generate upload URL', error);
     res.status(500).json({ message: 'Failed to generate upload URL', error: error.message });
   }
-}
+};
 
-async function confirmUpload(req, res) {
-  const { key, title, description, eventId, uploadedBy } = req.body;
-  console.log(req.body)
+const confirmUpload = async (req, res) => {
+  const { key, eventId, uploadedBy, themeChosen } = req.body;
+
+  // Validate input
+  if (!key || !eventId || !uploadedBy || !themeChosen) {
+    return res.status(400).json({ message: 'Key, event ID, uploadedBy, and themeChosen are required' });
+  }
+
+  const session = await Photo.startSession();
+  session.startTransaction();
+
   try {
-    const photoEvent = await PhotographyEvent.findById(eventId);
+    const photoEvent = await PhotographyEvent.findById(eventId).session(session);
     if (!photoEvent) {
+      await session.abortTransaction();
       return res.status(404).json({ message: 'Event not found' });
     }
 
-    const newPhoto = new Photo({ title, description, event: eventId, imageKey: key, uploadedBy });
-    await newPhoto.save();
+    // Check if the chosen theme is allowed
+    if (!photoEvent.themes.includes(themeChosen)) {
+      await session.abortTransaction();
+      return res.status(400).json({ message: 'Invalid theme chosen' });
+    }
+
+    const newPhoto = new Photo({ event: eventId, imageKey: key, uploadedBy, themeChosen });
+    await newPhoto.save({ session });
 
     photoEvent.photos.push(newPhoto._id);
-    await photoEvent.save();
+    await photoEvent.save({ session });
+
+    await session.commitTransaction();
+    session.endSession();
 
     logger.info(`Photo metadata saved for user: ${uploadedBy} for event: ${eventId}`);
     res.status(201).json(newPhoto);
   } catch (error) {
     logger.error('Failed to save photo metadata', error);
+    if (session.inTransaction()) {
+      await session.abortTransaction();
+    }
+    session.endSession();
     res.status(500).json({ message: 'Failed to save photo metadata', error: error.message });
   }
-}
+};
 
 async function getAllPhotos(req, res) {
   try {
@@ -72,7 +130,7 @@ async function getPhotosByEvent(req, res) {
   try {
     const photos = await Photo.find({ event: eventId }).populate('uploadedBy', 'name username').populate('event', 'title');
     if (!photos || photos.length === 0) {
-      return res.status(404).json({ message: 'No photos found for this event' });
+      return res.status(200).json({ photos: [] });
     }
     const photosWithUrls = await Promise.all(
       photos.map(async photo => ({
@@ -86,6 +144,7 @@ async function getPhotosByEvent(req, res) {
     res.status(500).json({ message: 'Failed to fetch photos for event', error: error.message });
   }
 }
+
 
 async function likePhoto(req, res) {
   const { photoId } = req.body;
@@ -154,4 +213,4 @@ async function determineWinner(req, res) {
   }
 }
 
-module.exports = { generateUploadUrl, confirmUpload, getAllPhotos, getPhotosByEvent, likePhoto, determineWinner };
+module.exports = { generateUploadUrl, getThemes, confirmUpload, getAllPhotos, getPhotosByEvent, likePhoto, determineWinner };
