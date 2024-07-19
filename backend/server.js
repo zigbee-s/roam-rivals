@@ -6,6 +6,7 @@ const authRoutes = require('./routes/authRoutes');
 const userRoutes = require('./routes/userRoutes');
 const eventRoutes = require('./routes/eventRoutes');
 const photoRoutes = require('./routes/photoRoutes');
+const leaderboardRoutes = require('./routes/leaderboardRoutes')
 const rateLimit = require('express-rate-limit');
 const expressWinston = require('express-winston');
 const winston = require('winston');
@@ -47,6 +48,8 @@ app.use('/auth', authRoutes);
 app.use('/user', userRoutes);
 app.use('/events', eventRoutes);
 app.use('/photos', photoRoutes);
+app.use('/leaderboard', leaderboardRoutes)
+
 
 // Error handling middleware
 app.use((err, req, res, next) => {

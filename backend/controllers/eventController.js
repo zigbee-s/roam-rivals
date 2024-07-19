@@ -3,8 +3,9 @@ const User = require('../models/userModel');
 const { sendEventRegistrationEmail } = require('../utils/emailService');
 const logger = require('../logger');
 
+
 async function createEvent(req, res) {
-  const { title, description, startingDate, eventEndDate, location, eventType, maxPhotos, themes, PhotosubmissionDeadline, ...rest } = req.body;
+  const { title, description, startingDate, eventEndDate, location, eventType, maxPhotos, themes, photoSubmissionDeadline, maxImagesPerUser, maxLikesPerUser, ...rest } = req.body;
   const createdBy = req.user.userId;
 
   try {
@@ -22,7 +23,7 @@ async function createEvent(req, res) {
           logger.warn(`Unauthorized photography event creation attempt by user: ${req.user.userId}`);
           return res.status(403).json({ message: 'Only admins can create photography events' });
         }
-        event = new PhotographyEvent({ title, description, startingDate, eventEndDate, location, createdBy, eventType, maxPhotos, themes, PhotosubmissionDeadline, ...rest });
+        event = new PhotographyEvent({ title, description, startingDate, eventEndDate, location, createdBy, eventType, maxPhotos, themes, photoSubmissionDeadline, maxImagesPerUser, maxLikesPerUser, ...rest });
         break;
       default:
         event = new Event({ title, description, startingDate, eventEndDate, location, createdBy, eventType });

@@ -18,6 +18,7 @@ import { navigationRef } from '../api/navigationRef';
 import ErrorScreen from '../components/ErrorScreen';
 import { ErrorContext } from '../context/ErrorContext';
 import NetworkStatus from '../components/NetworkStatus';
+import LeaderboardScreen from '../screens/LeaderboardScreen';
 
 const Stack = createNativeStackNavigator();
 
@@ -91,6 +92,7 @@ const AppNavigator = () => {
             <Stack.Screen name="Events" options={profileButton}>
               {(props) => <EventScreen {...props} userRoles={userRoles} />}
             </Stack.Screen>
+            <Stack.Screen name="LeaderboardScreen" component={LeaderboardScreen} />
             <Stack.Screen name="CreateEvent" component={CreateEventScreen} options={profileButton} />
             <Stack.Screen name="AddQuestions" component={AddQuestionsScreen} />
             <Stack.Screen name="UploadImage" component={UploadImageScreen} /> 

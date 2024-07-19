@@ -1,3 +1,5 @@
+// backend/models/eventModel.js
+
 const mongoose = require('mongoose');
 const { Schema } = mongoose;
 
@@ -44,13 +46,25 @@ const photographyEventSchema = new Schema({
   maxPhotos: { type: Number, required: true },
   themes: [{ type: String, required: true }], // Ensure themes are properly defined
   photoSubmissionDeadline: { type: Date, required: true },
-  photos: [{ type: Schema.Types.ObjectId, ref: 'Photo' }]
+  photos: [{ type: Schema.Types.ObjectId, ref: 'Photo' }],
+  maxImagesPerUser: { type: Number, required: true },  // New field
+  maxLikesPerUser: { type: Number, required: true }    // New field
 });
 
 // Photography event status methods
 photographyEventSchema.methods.isSubmissionStarted = function () {
   const now = new Date();
   return now >= this.photoSubmissionDeadline;
+};
+
+photographyEventSchema.methods.isUploadAllowed = async function (userId) {
+  const photos = await mongoose.model('Photo').countDocuments({ uploadedBy: userId, event: this._id });
+  return photos < this.maxImagesPerUser;
+};
+
+photographyEventSchema.methods.isLikeAllowed = async function (userId) {
+  const likes = await mongoose.model('Photo').countDocuments({ likes: userId, event: this._id });
+  return likes < this.maxLikesPerUser;
 };
 
 const PhotographyEvent = Event.discriminator('photography', photographyEventSchema);

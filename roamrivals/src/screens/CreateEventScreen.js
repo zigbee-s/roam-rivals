@@ -1,6 +1,8 @@
+// File: roamrivals/src/screens/CreateEventScreen.js
+
 import React, { useState } from 'react';
 import { Picker } from '@react-native-picker/picker';
-import { View, TextInput, StyleSheet, Alert, ActivityIndicator, ScrollView, Text, Button } from 'react-native';
+import { View, TextInput, StyleSheet, Alert, ActivityIndicator, ScrollView, Text } from 'react-native';
 import { Formik } from 'formik';
 import * as yup from 'yup';
 import apiClient from '../api/apiClient';
@@ -51,17 +53,29 @@ const validationSchema = yup.object().shape({
       is: 'photography',
       then: schema => schema.required('Themes are required for photography'),
     }),
-  PhotosubmissionDeadline: yup.string()
+  photoSubmissionDeadline: yup.string()
     .nullable()
     .when('eventType', {
       is: 'photography',
       then: schema => schema.required('Photo submission deadline is required for photography'),
     }),
-  PhotosubmissionTime: yup.string()
+  photoSubmissionTime: yup.string()
     .nullable()
     .when('eventType', {
       is: 'photography',
       then: schema => schema.required('Photo submission time is required for photography'),
+    }),
+  maxImagesPerUser: yup.number()
+    .nullable()
+    .when('eventType', {
+      is: 'photography',
+      then: schema => schema.required('Max images per user is required for photography').positive().integer(),
+    }),
+  maxLikesPerUser: yup.number()
+    .nullable()
+    .when('eventType', {
+      is: 'photography',
+      then: schema => schema.required('Max likes per user is required for photography').positive().integer(),
     }),
 });
 
@@ -89,14 +103,17 @@ const CreateEventScreen = ({ navigation }) => {
 
       const startingDateTime = new Date(`${values.startingDate}T${values.startingTime}:00`);
       const eventEndDateTime = new Date(`${values.eventEndDate}T${values.eventEndTime}:00`);
-      const photoSubmissionDeadline = new Date(`${values.PhotosubmissionDeadline}T${values.PhotosubmissionTime}:00`);
+      const photoSubmissionDeadline = new Date(`${values.photoSubmissionDeadline}T${values.photoSubmissionTime}:00`);
+
+      const themesArray = values.themes.split(',').map(theme => theme.trim());
 
       await apiClient.post('/events', {
         ...values,
         questions: quizQuestions,
         startingDate: startingDateTime.toISOString(),
         eventEndDate: eventEndDateTime.toISOString(),
-        PhotosubmissionDeadline: photoSubmissionDeadline.toISOString(),
+        photoSubmissionDeadline: photoSubmissionDeadline.toISOString(),
+        themes: themesArray,
       });
       Alert.alert('Success', 'Event created successfully');
       navigation.navigate('Events', { refresh: true });
@@ -112,22 +129,24 @@ const CreateEventScreen = ({ navigation }) => {
       {errorMessage ? <Text style={styles.error}>{errorMessage}</Text> : null}
       <Formik
         initialValues={{
-          title: '',
-          description: '',
-          startingDate: '',
-          startingTime: '',
-          eventEndDate: '',
-          eventEndTime: '',
-          location: '',
-          eventType: 'general',
+          title: 'Nature Photography Contest',
+          description: 'A contest to capture the best nature photographs.',
+          startingDate: '2024-08-01',
+          startingTime: '10:00',
+          eventEndDate: '2024-08-15',
+          eventEndTime: '18:00',
+          location: 'Central Park',
+          eventType: 'photography',
           numberOfQuestions: '',
           difficulty: '',
           timeLimit: '',
           questions: '',
-          maxPhotos: '',
-          themes: '',
-          PhotosubmissionDeadline: '',
-          PhotosubmissionTime: '',
+          maxPhotos: '100',
+          themes: 'Nature, Wildlife, Landscapes',
+          photoSubmissionDeadline: '2024-08-14',
+          photoSubmissionTime: '23:59',
+          maxImagesPerUser: '5',  // Sample value
+          maxLikesPerUser: '10',  // Sample value
         }}
         validationSchema={validationSchema}
         onSubmit={handleCreateEvent}
@@ -261,19 +280,37 @@ const CreateEventScreen = ({ navigation }) => {
                 <TextInput
                   style={styles.input}
                   placeholder="Photo Submission Deadline (YYYY-MM-DD)"
-                  onChangeText={handleChange('PhotosubmissionDeadline')}
-                  onBlur={handleBlur('PhotosubmissionDeadline')}
-                  value={values.PhotosubmissionDeadline}
+                  onChangeText={handleChange('photoSubmissionDeadline')}
+                  onBlur={handleBlur('photoSubmissionDeadline')}
+                  value={values.photoSubmissionDeadline}
                 />
-                {touched.PhotosubmissionDeadline && errors.PhotosubmissionDeadline && <Text style={styles.errorText}>{errors.PhotosubmissionDeadline}</Text>}
+                {touched.photoSubmissionDeadline && errors.photoSubmissionDeadline && <Text style={styles.errorText}>{errors.photoSubmissionDeadline}</Text>}
                 <TextInput
                   style={styles.input}
                   placeholder="Photo Submission Time (HH:MM)"
-                  onChangeText={handleChange('PhotosubmissionTime')}
-                  onBlur={handleBlur('PhotosubmissionTime')}
-                  value={values.PhotosubmissionTime}
+                  onChangeText={handleChange('photoSubmissionTime')}
+                  onBlur={handleBlur('photoSubmissionTime')}
+                  value={values.photoSubmissionTime}
                 />
-                {touched.PhotosubmissionTime && errors.PhotosubmissionTime && <Text style={styles.errorText}>{errors.PhotosubmissionTime}</Text>}
+                {touched.photoSubmissionTime && errors.photoSubmissionTime && <Text style={styles.errorText}>{errors.photoSubmissionTime}</Text>}
+                <TextInput
+                  style={styles.input}
+                  placeholder="Max Images Per User"
+                  onChangeText={handleChange('maxImagesPerUser')}
+                  onBlur={handleBlur('maxImagesPerUser')}
+                  value={values.maxImagesPerUser}
+                  keyboardType="numeric"
+                />
+                {touched.maxImagesPerUser && errors.maxImagesPerUser && <Text style={styles.errorText}>{errors.maxImagesPerUser}</Text>}
+                <TextInput
+                  style={styles.input}
+                  placeholder="Max Likes Per User"
+                  onChangeText={handleChange('maxLikesPerUser')}
+                  onBlur={handleBlur('maxLikesPerUser')}
+                  value={values.maxLikesPerUser}
+                  keyboardType="numeric"
+                />
+                {touched.maxLikesPerUser && errors.maxLikesPerUser && <Text style={styles.errorText}>{errors.maxLikesPerUser}</Text>}
               </>
             )}
             {loading ? (

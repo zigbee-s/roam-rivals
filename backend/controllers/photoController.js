@@ -1,31 +1,30 @@
+// File: backend/controllers/photoController.js
+
 const Photo = require('../models/photoModel');
 const { getPresignedUrl, getUploadPresignedUrl } = require('../utils/s3Utils');
 const { PhotographyEvent } = require('../models/eventModel');
 const logger = require('../logger');
-const { sendEmail } = require('../utils/emailService');
+const { sendWinnerNotificationEmail } = require('../utils/emailService'); // Import the sendWinnerNotificationEmail function
 const User = require('../models/userModel'); // Ensure to include User model
+const Leaderboard = require('../models/leaderboardModel'); // Import the Leaderboard model
 
 const generateS3Key = (uploadedBy) => {
   return `photos/${Date.now().toString()}_${uploadedBy}.jpg`;
 };
 
-
 const getThemes = async (req, res) => {
   const { eventId } = req.params;
-  
-    try {
-      const event = await PhotographyEvent.findById(eventId);
-      if (!event) {
-        return res.status(404).json({ message: 'Event not found' });
-      }
-  
-      res.status(200).json({ themes: event.themes });
-    } catch (error) {
-      logger.error('Failed to fetch themes', error);
-      res.status(500).json({ message: 'Failed to fetch themes', error: error.message });
+  try {
+    const event = await PhotographyEvent.findById(eventId);
+    if (!event) {
+      return res.status(404).json({ message: 'Event not found' });
     }
-  };
-
+    res.status(200).json({ themes: event.themes });
+  } catch (error) {
+    logger.error('Failed to fetch themes', error);
+    res.status(500).json({ message: 'Failed to fetch themes', error: error.message });
+  }
+};
 
 const generateUploadUrl = async (req, res) => {
   const { eventId } = req.params;
@@ -43,17 +42,25 @@ const generateUploadUrl = async (req, res) => {
       return res.status(404).json({ message: 'Event not found' });
     }
 
+    if (!photoEvent.participants.includes(uploadedBy)) {
+      return res.status(403).json({ message: 'You are not registered for this event' });
+    }
+
+    if (!(await photoEvent.isUploadAllowed(uploadedBy))) {
+      return res.status(400).json({ message: 'You have reached the maximum number of uploads for this event' });
+    }
+
     // Check if the chosen theme is allowed
     if (!photoEvent.themes.includes(themeChosen)) {
       return res.status(400).json({ message: 'Invalid theme chosen' });
     }
 
+    // Check if the total number of photos in the event is less than the maximum allowed
     if (photoEvent.photos.length >= photoEvent.maxPhotos) {
       return res.status(400).json({ message: 'Max photos limit reached for this event' });
     }
 
     const key = generateS3Key(uploadedBy);
-
     const uploadUrl = await getUploadPresignedUrl(key, 3600, { themeChosen }); // URL valid for 1 hour
 
     res.status(201).json({ uploadUrl, key, eventId, uploadedBy, themeChosen });
@@ -87,6 +94,12 @@ const confirmUpload = async (req, res) => {
       return res.status(400).json({ message: 'Invalid theme chosen' });
     }
 
+    // Check if the total number of photos in the event is less than the maximum allowed
+    if (photoEvent.photos.length >= photoEvent.maxPhotos) {
+      await session.abortTransaction();
+      return res.status(400).json({ message: 'Max photos limit reached for this event' });
+    }
+
     const newPhoto = new Photo({ event: eventId, imageKey: key, uploadedBy, themeChosen });
     await newPhoto.save({ session });
 
@@ -115,6 +128,7 @@ async function getAllPhotos(req, res) {
       photos.map(async photo => ({
         ...photo.toObject(),
         imageUrl: await getPresignedUrl(photo.imageKey, 60 * 60), // 1 hour expiration
+        likesCount: photo.likes.length
       }))
     );
     res.status(200).json(photosWithUrls);
@@ -136,6 +150,7 @@ async function getPhotosByEvent(req, res) {
       photos.map(async photo => ({
         ...photo.toObject(),
         imageUrl: await getPresignedUrl(photo.imageKey, 60 * 60), // 1 hour expiration
+        likesCount: photo.likes.length
       }))
     );
     res.status(200).json(photosWithUrls);
@@ -145,11 +160,9 @@ async function getPhotosByEvent(req, res) {
   }
 }
 
-
 async function likePhoto(req, res) {
   const { photoId } = req.body;
   const userId = req.user.userId;
-  const maxLikes = 10;
 
   try {
     const photo = await Photo.findById(photoId);
@@ -157,15 +170,21 @@ async function likePhoto(req, res) {
       return res.status(404).json({ message: 'Photo not found' });
     }
 
-    const userLikesCount = await Photo.countDocuments({ likes: userId });
-    if (userLikesCount >= maxLikes) {
-      return res.status(403).json({ message: `You can only like up to ${maxLikes} photos` });
+    const event = await PhotographyEvent.findById(photo.event);
+    if (!event) {
+      return res.status(404).json({ message: 'Event not found' });
     }
 
-    if (!photo.likes.includes(userId)) {
-      photo.likes.push(userId);
-      await photo.save();
+    if (!(await event.isLikeAllowed(userId))) {
+      return res.status(403).json({ message: 'You have reached the maximum number of likes for this event' });
     }
+
+    if (photo.likes.includes(userId)) {
+      return res.status(400).json({ message: 'You have already liked this photo' });
+    }
+
+    photo.likes.push(userId);
+    await photo.save();
 
     logger.info(`Photo liked by user: ${userId}`);
     res.status(200).json({ message: 'Photo liked successfully', photo });
@@ -188,28 +207,39 @@ async function determineWinner(req, res) {
       return res.status(400).json({ message: 'Event is still ongoing' });
     }
 
-    let winningPhoto = null;
-    let maxLikes = -1;
+    // Sort photos by number of likes in descending order
+    const sortedPhotos = event.photos.sort((a, b) => b.likes.length - a.likes.length);
 
-    for (const photo of event.photos) {
-      if (photo.likes.length > maxLikes) {
-        maxLikes = photo.likes.length;
-        winningPhoto = photo;
-      }
+    // Select top 3 photos or fewer if there aren't enough photos
+    const topPhotos = sortedPhotos.slice(0, 3);
+
+    // Notify the winners and update their isWinner status
+    for (let rank = 0; rank < topPhotos.length; rank++) {
+      const photo = topPhotos[rank];
+      const user = await User.findById(photo.uploadedBy);
+      await sendWinnerNotificationEmail(user.email, photo.title || 'Untitled', photo.likes.length);
+      photo.isWinner = true;
+      await photo.save();
+
+      // Save to leaderboard
+      const leaderboardEntry = new Leaderboard({
+        event: eventId,
+        winner: user._id,
+        rank: rank + 1,
+        eventType: event.eventType,
+        date: event.eventEndDate,
+        details: {
+          likes: photo.likes.length.toString(),
+          title: photo.title || 'Untitled',
+        }
+      });
+      await leaderboardEntry.save();
     }
 
-    if (winningPhoto) {
-      const user = await User.findById(winningPhoto.uploadedBy);
-      await sendEmail(user.email, 'Congratulations! You have won the photography event', `Your photo titled \"${winningPhoto.title}\" has won with ${maxLikes} likes.`);
-      winningPhoto.isWinner = true;
-      await winningPhoto.save();
-      res.status(200).json({ message: 'Winner determined and notified', winningPhoto });
-    } else {
-      res.status(404).json({ message: 'No photos in the event' });
-    }
+    res.status(200).json({ message: 'Winners determined and notified', winners: topPhotos });
   } catch (error) {
-    logger.error('Failed to determine winner', error);
-    res.status(500).json({ message: 'Failed to determine winner', error: error.message });
+    logger.error('Failed to determine winners', error);
+    res.status(500).json({ message: 'Failed to determine winners', error: error.message });
   }
 }
 

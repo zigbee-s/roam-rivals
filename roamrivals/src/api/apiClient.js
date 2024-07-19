@@ -79,6 +79,14 @@ apiClient.interceptors.response.use(
         navigationRef.navigate('Login');
       }
 
+
+      if (error.response.status === 404 && error.response.data.message === 'User not found') {
+        console.error("User not found");
+        await deleteToken();
+        await deleteRefreshToken();
+        navigationRef.navigate('Login');
+      }
+
       // Other errors
       // if (error.response.status === 403 || error.response.status === 400) {
       //   console.error("Error response:", error.response.data.message);

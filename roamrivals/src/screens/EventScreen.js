@@ -1,3 +1,5 @@
+// File: roamrivals/src/screens/EventScreen.js
+
 import React, { useState, useEffect, useContext, useCallback } from 'react';
 import { View, Text, FlatList, StyleSheet, ActivityIndicator, Button, Alert, Image } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
@@ -85,6 +87,28 @@ const EventScreen = ({ navigation }) => {
     }
   };
 
+  const handleLikePhoto = async (photoId) => {
+    setLoading(true);
+    setError(null);
+    try {
+      const response = await apiClient.post('/photos/like', { photoId });
+      setPhotos((prevPhotos) => prevPhotos.map(photo => 
+        photo._id === photoId ? { ...photo, likesCount: (photo.likesCount || 0) + 1 } : photo
+      ));
+      Alert.alert('Success', 'Photo liked successfully!');
+    } catch (error) {
+      if (!error.response) {
+        setError('Unable to connect to the backend. Please try again later.');
+      } else if (error.response.status === 403) {
+        setError('Access forbidden: You do not have permission to access this resource.');
+      } else {
+        setError(error.response.data.message || 'An error occurred');
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <View style={styles.container}>
       {loading ? (
@@ -97,6 +121,10 @@ const EventScreen = ({ navigation }) => {
               onPress={() => navigation.navigate('CreateEvent')}
             />
           )}
+          <Button
+            title="View Leaderboard"
+            onPress={() => navigation.navigate('LeaderboardScreen')}
+          />
           {selectedEvent ? (
             <>
               <Button title="Back to Events" onPress={() => setSelectedEvent(null)} />
@@ -112,10 +140,17 @@ const EventScreen = ({ navigation }) => {
                       data={photos}
                       keyExtractor={(item) => item._id}
                       renderItem={({ item }) => (
-                        <Image
-                          source={{ uri: item.imageUrl }}
-                          style={styles.photo}
-                        />
+                        <View style={styles.photoContainer}>
+                          <Image
+                            source={{ uri: item.imageUrl }}
+                            style={styles.photo}
+                          />
+                          <Text>Likes: {item.likesCount || 0}</Text>
+                          <Button
+                            title="Like"
+                            onPress={() => handleLikePhoto(item._id)}
+                          />
+                        </View>
                       )}
                     />
                   )}
@@ -166,6 +201,9 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: 'bold',
     marginTop: 10,
+  },
+  photoContainer: {
+    marginBottom: 20,
   },
   photo: {
     width: '100%',

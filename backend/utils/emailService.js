@@ -1,3 +1,5 @@
+// File: backend/utils/emailService.js
+
 const nodemailer = require('nodemailer');
 
 const transporter = nodemailer.createTransport({
@@ -34,4 +36,21 @@ async function sendEventRegistrationEmail(email, eventTitle) {
   }
 }
 
-module.exports = { sendOtpEmail, sendEventRegistrationEmail };
+async function sendWinnerNotificationEmail(to, photoTitle, maxLikes) {
+  const mailOptions = {
+    from: process.env.EMAIL_USER,
+    to,
+    subject: 'Congratulations! You have won the photography event',
+    text: `Your photo titled "${photoTitle}" has won with ${maxLikes} likes.`,
+  };
+
+  try {
+    await transporter.sendMail(mailOptions);
+    console.log(`Winner notification email sent to ${to}`);
+  } catch (error) {
+    console.error('Error sending winner notification email:', error);
+    throw error;
+  }
+}
+
+module.exports = { sendOtpEmail, sendEventRegistrationEmail, sendWinnerNotificationEmail };
