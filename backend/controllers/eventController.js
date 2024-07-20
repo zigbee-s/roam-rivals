@@ -1,12 +1,14 @@
 const { Event, QuizEvent, PhotographyEvent } = require('../models/eventModel');
 const User = require('../models/userModel');
-const { getUploadPresignedUrl } = require('../utils/s3Utils');
+const { getUploadPresignedUrl, getPresignedUrl } = require('../utils/s3Utils');
 const { sendEventRegistrationEmail } = require('../utils/emailService');
 const logger = require('../logger');
 
-
 async function createEvent(req, res) {
-  const { title, description, startingDate, eventEndDate, location, eventType, maxPhotos, themes, photoSubmissionDeadline, maxImagesPerUser, maxLikesPerUser, ...rest } = req.body;
+  const { 
+    title, description, startingDate, eventEndDate, location, eventType, maxPhotos, 
+    themes, photoSubmissionDeadline, maxImagesPerUser, maxLikesPerUser, logoUrl, ...rest 
+  } = req.body;
   const createdBy = req.user.userId;
 
   try {
@@ -17,24 +19,29 @@ async function createEvent(req, res) {
           logger.warn(`Unauthorized quiz event creation attempt by user: ${req.user.userId}`);
           return res.status(403).json({ message: 'Only admins can create quiz events' });
         }
-        event = new QuizEvent({ title, description, startingDate, eventEndDate, location, createdBy, eventType, ...rest });
+        event = new QuizEvent({ 
+          title, description, startingDate, eventEndDate, location, createdBy, eventType, ...rest 
+        });
         break;
       case 'photography':
         if (!req.user.roles.includes('admin')) {
           logger.warn(`Unauthorized photography event creation attempt by user: ${req.user.userId}`);
           return res.status(403).json({ message: 'Only admins can create photography events' });
         }
-        event = new PhotographyEvent({ title, description, startingDate, eventEndDate, location, createdBy, eventType, maxPhotos, themes, photoSubmissionDeadline, maxImagesPerUser, maxLikesPerUser, ...rest });
+        event = new PhotographyEvent({ 
+          title, description, startingDate, eventEndDate, location, createdBy, eventType, maxPhotos, 
+          themes, photoSubmissionDeadline, maxImagesPerUser, maxLikesPerUser, ...rest 
+        });
         break;
       default:
-        event = new Event({ title, description, startingDate, eventEndDate, location, createdBy, eventType });
+        event = new Event({ 
+          title, description, startingDate, eventEndDate, location, createdBy, eventType 
+        });
     }
 
-    if (req.file) {
-      const { path, mimetype } = req.file;
-      const key = `event-logos/${Date.now().toString()}_${path}`;
-      const uploadUrl = await getUploadPresignedUrl(key, 3600, { mimetype }); // URL valid for 1 hour
-      event.logoImageUrl = uploadUrl;
+    // Add the logo image URL if provided
+    if (logoUrl) {
+      event.logoImageUrl = logoUrl;
     }
 
     await event.save();
@@ -46,11 +53,31 @@ async function createEvent(req, res) {
   }
 }
 
+async function generateLogoUploadUrl(req, res) {
+  const { title } = req.body;
+  const key = `event-logos/${Date.now().toString()}_${title.replace(/ /g, '_')}.jpg`;
+
+  try {
+    const uploadUrl = await getUploadPresignedUrl(key, 3600, {}); // URL valid for 1 hour
+    res.status(201).json({ uploadUrl, key });
+  } catch (error) {
+    logger.error('Failed to generate upload URL', error);
+    res.status(500).json({ message: 'Failed to generate upload URL', error: error.message });
+  }
+}
 
 async function getEvents(req, res) {
   try {
     const events = await Event.find();
-    res.status(200).json(events);
+    const eventsWithPresignedUrls = await Promise.all(events.map(async (event) => {
+      if (event.logoImageUrl) {
+        const logoPresignedUrl = await getPresignedUrl(event.logoImageUrl, 3600);
+        return { ...event.toObject(), logoPresignedUrl };
+      }
+      return event.toObject();
+    }));
+
+    res.status(200).json(eventsWithPresignedUrls);
   } catch (error) {
     logger.error('Failed to fetch events', error);
     res.status(500).json({ message: 'Failed to fetch events', error: error.message });
@@ -66,6 +93,12 @@ async function getEventById(req, res) {
       logger.warn(`Event not found: ${eventId}`);
       return res.status(404).json({ message: 'Event not found' });
     }
+
+    if (event.logoImageUrl) {
+      const logoPresignedUrl = await getPresignedUrl(event.logoImageUrl, 3600);
+      event.logoPresignedUrl = logoPresignedUrl;
+    }
+
     res.status(200).json(event);
   } catch (error) {
     logger.error('Failed to fetch event', error);
@@ -192,4 +225,4 @@ async function checkUserRegistration(req, res) {
   }
 }
 
-module.exports = { createEvent, getEvents, getEventById, updateEvent, deleteEvent, registerEvent, getEventStatus, checkUserRegistration  };
+module.exports = { createEvent, generateLogoUploadUrl, getEvents, getEventById, updateEvent, deleteEvent, registerEvent, getEventStatus, checkUserRegistration };

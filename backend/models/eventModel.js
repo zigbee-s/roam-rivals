@@ -13,6 +13,7 @@ const eventSchema = new Schema({
   eventType: { type: String, required: true, enum: ['general', 'quiz', 'photography'] },
   participants: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
   logoImageUrl: { type: String }, // Add this field for logo image URL
+  winners: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }] // Add winners field to store winner IDs
 }, { discriminatorKey: 'eventType' });
 
 // General event status methods

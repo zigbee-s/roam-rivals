@@ -2,9 +2,10 @@
 
 import React, { useState } from 'react';
 import { Picker } from '@react-native-picker/picker';
-import { View, TextInput, StyleSheet, Alert, ActivityIndicator, ScrollView, Text } from 'react-native';
+import { View, TextInput, StyleSheet, Alert, ActivityIndicator, ScrollView, Text, Image, Button } from 'react-native';
 import { Formik } from 'formik';
 import * as yup from 'yup';
+import * as ImagePicker from 'expo-image-picker';
 import apiClient from '../api/apiClient';
 import CustomButton from '../components/CustomButton';
 
@@ -82,11 +83,71 @@ const validationSchema = yup.object().shape({
 const CreateEventScreen = ({ navigation }) => {
   const [loading, setLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
+  const [logoImage, setLogoImage] = useState(null);
+
+  const pickImage = async () => {
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsEditing: true,
+      aspect: [4, 3],
+      quality: 1,
+    });
+
+    if (!result.canceled && result.assets && result.assets.length > 0) {
+      setLogoImage(result.assets[0].uri);
+    } else {
+      console.log('Image picking canceled or no assets found');
+    }
+  };
+
+  const getImageType = (uri) => {
+    const extension = uri.split('.').pop().toLowerCase();
+    switch (extension) {
+      case 'jpg':
+      case 'jpeg':
+        return 'image/jpeg';
+      case 'png':
+        return 'image/png';
+      case 'gif':
+        return 'image/gif';
+      case 'bmp':
+        return 'image/bmp';
+      case 'webp':
+        return 'image/webp';
+      default:
+        return 'image/jpeg';
+    }
+  };
 
   const handleCreateEvent = async (values) => {
     setLoading(true);
     setErrorMessage('');
     try {
+      let logoUrl = null;
+
+      if (logoImage) {
+        const presignedUrlResponse = await apiClient.post(
+          `/events/generate-upload-url/logo`,
+          { title: values.title }
+        );
+
+        const { uploadUrl, key } = presignedUrlResponse.data;
+
+        const imageType = getImageType(logoImage);
+        const imageResponse = await fetch(logoImage);
+        const blob = await imageResponse.blob();
+
+        await fetch(uploadUrl, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': imageType,
+          },
+          body: blob,
+        });
+
+        logoUrl = key; // Use the key as the URL to be saved in the event
+      }
+
       let quizQuestions = [];
       if (values.eventType === 'quiz') {
         try {
@@ -114,6 +175,7 @@ const CreateEventScreen = ({ navigation }) => {
         eventEndDate: eventEndDateTime.toISOString(),
         photoSubmissionDeadline: photoSubmissionDeadline.toISOString(),
         themes: themesArray,
+        logoUrl,
       });
       Alert.alert('Success', 'Event created successfully');
       navigation.navigate('Events', { refresh: true });
@@ -313,6 +375,8 @@ const CreateEventScreen = ({ navigation }) => {
                 {touched.maxLikesPerUser && errors.maxLikesPerUser && <Text style={styles.errorText}>{errors.maxLikesPerUser}</Text>}
               </>
             )}
+            <Button title="Pick a logo image" onPress={pickImage} />
+            {logoImage && <Image source={{ uri: logoImage }} style={styles.image} />}
             {loading ? (
               <ActivityIndicator size="large" color="#0000ff" />
             ) : (
@@ -347,6 +411,11 @@ const styles = StyleSheet.create({
   errorText: {
     color: 'red',
     marginBottom: 10,
+  },
+  image: {
+    width: '100%',
+    height: 200,
+    marginVertical: 16,
   },
 });
 

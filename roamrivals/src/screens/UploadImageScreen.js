@@ -1,3 +1,5 @@
+// roamrivals/src/screens/UploadImageScreen.js
+
 import React, { useState, useEffect } from 'react';
 import { View, Text, Button, StyleSheet, Image, Alert } from 'react-native';
 import { Picker } from '@react-native-picker/picker';
@@ -10,6 +12,7 @@ const UploadImageScreen = ({ navigation, route }) => {
   const [themeChosen, setThemeChosen] = useState('');
   const [image, setImage] = useState(null);
   const [uploading, setUploading] = useState(false);
+  const [remainingUploads, setRemainingUploads] = useState(0);
 
   useEffect(() => {
     const fetchThemes = async () => {
@@ -21,7 +24,17 @@ const UploadImageScreen = ({ navigation, route }) => {
       }
     };
 
+    const fetchRemainingUploads = async () => {
+      try {
+        const response = await apiClient.get(`/photos/${eventId}/userUploadsCount`);
+        setRemainingUploads(response.data.maxImagesPerUser - response.data.count);
+      } catch (error) {
+        console.error('Failed to fetch remaining uploads', error);
+      }
+    };
+
     fetchThemes();
+    fetchRemainingUploads();
   }, [eventId]);
 
   const pickImage = async () => {
@@ -61,6 +74,11 @@ const UploadImageScreen = ({ navigation, route }) => {
   const handleSubmit = async () => {
     if (!themeChosen || !image) {
       Alert.alert('Please choose a theme and select an image');
+      return;
+    }
+
+    if (remainingUploads <= 0) {
+      Alert.alert('You have reached the maximum number of uploads for this event');
       return;
     }
 
@@ -124,6 +142,7 @@ const UploadImageScreen = ({ navigation, route }) => {
       <Button title="Pick an image from gallery" onPress={pickImage} />
       {image && <Image source={{ uri: image }} style={styles.image} />}
       <Button title={uploading ? "Uploading..." : "Upload Photo"} onPress={handleSubmit} disabled={uploading || themes.length === 0} />
+      <Text>You can upload {remainingUploads} more photos.</Text>
     </View>
   );
 };

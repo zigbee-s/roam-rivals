@@ -23,6 +23,23 @@ const LeaderboardScreen = () => {
     fetchLeaderboard();
   }, []);
 
+  const renderWinner = (winner) => (
+    <View key={winner.winner._id} style={styles.winnerItem}>
+      <Text style={styles.rank}>Rank: {winner.rank}</Text>
+      <Text>Winner: {winner.winner.username}</Text>
+      <Text>Likes: {winner.details.likes}</Text>
+      <Text>Theme: {winner.details.theme}</Text>
+    </View>
+  );
+
+  const renderItem = ({ item }) => (
+    <View style={styles.item}>
+      <Text style={styles.title}>{item.event.title}</Text>
+      <Text style={styles.date}>Date: {new Date(item.date).toLocaleDateString()}</Text>
+      {item.winners.map(renderWinner)}
+    </View>
+  );
+
   return (
     <View style={styles.container}>
       {loading ? (
@@ -31,15 +48,7 @@ const LeaderboardScreen = () => {
         <FlatList
           data={leaderboard}
           keyExtractor={(item) => item._id}
-          renderItem={({ item }) => (
-            <View style={styles.item}>
-              <Text style={styles.title}>{item.event.title}</Text>
-              <Text>Winner: {item.winner.username}</Text>
-              <Text>Rank: {item.rank}</Text>
-              <Text>Likes: {item.details.likes}</Text>
-              <Text>Date: {new Date(item.date).toLocaleDateString()}</Text>
-            </View>
-          )}
+          renderItem={renderItem}
         />
       )}
     </View>
@@ -58,6 +67,20 @@ const styles = StyleSheet.create({
   },
   title: {
     fontSize: 18,
+    fontWeight: 'bold',
+  },
+  date: {
+    fontSize: 14,
+    color: '#666',
+  },
+  winnerItem: {
+    marginTop: 10,
+    padding: 10,
+    backgroundColor: '#f9f9f9',
+    borderRadius: 5,
+  },
+  rank: {
+    fontSize: 16,
     fontWeight: 'bold',
   },
 });

@@ -194,8 +194,9 @@ async function likePhoto(req, res) {
   }
 }
 
-async function determineWinner(req, res) {
+const determineWinner = async (req, res) => {
   const { eventId } = req.params;
+  const { allowedWinners } = req.body;
 
   try {
     const event = await PhotographyEvent.findById(eventId).populate('photos');
@@ -210,8 +211,11 @@ async function determineWinner(req, res) {
     // Sort photos by number of likes in descending order
     const sortedPhotos = event.photos.sort((a, b) => b.likes.length - a.likes.length);
 
-    // Select top 3 photos or fewer if there aren't enough photos
-    const topPhotos = sortedPhotos.slice(0, 3);
+    // Select top allowedWinners photos or fewer if there aren't enough photos
+    const topPhotos = sortedPhotos.slice(0, allowedWinners);
+
+    // Array to store winners for the leaderboard
+    const winners = [];
 
     // Notify the winners and update their isWinner status
     for (let rank = 0; rank < topPhotos.length; rank++) {
@@ -221,26 +225,78 @@ async function determineWinner(req, res) {
       photo.isWinner = true;
       await photo.save();
 
-      // Save to leaderboard
-      const leaderboardEntry = new Leaderboard({
-        event: eventId,
+      // Prepare winner details for leaderboard
+      winners.push({
         winner: user._id,
         rank: rank + 1,
-        eventType: event.eventType,
-        date: event.eventEndDate,
         details: {
           likes: photo.likes.length.toString(),
-          title: photo.themeChosen || 'Untitled',
+          theme: photo.themeChosen || 'Untitled',
         }
       });
-      await leaderboardEntry.save();
+
+      // Add winner to event's winners list
+      event.winners.push(user._id);
     }
+
+    await event.save();
+
+    // Save or update leaderboard entry
+    const leaderboardEntry = await Leaderboard.findOneAndUpdate(
+      { event: eventId },
+      {
+        event: eventId,
+        eventType: event.eventType,
+        date: event.eventEndDate,
+        winners: winners
+      },
+      { upsert: true, new: true, setDefaultsOnInsert: true }
+    );
 
     res.status(200).json({ message: 'Winners determined and notified', winners: topPhotos });
   } catch (error) {
     logger.error('Failed to determine winners', error);
     res.status(500).json({ message: 'Failed to determine winners', error: error.message });
   }
-}
+};
 
-module.exports = { generateUploadUrl, getThemes, confirmUpload, getAllPhotos, getPhotosByEvent, likePhoto, determineWinner };
+const getUserUploadedPhotosCount = async (req, res) => {
+  const { eventId } = req.params;
+  const userId = req.user.userId;
+
+  try {
+    const photoEvent = await PhotographyEvent.findById(eventId);
+    if (!photoEvent) {
+      return res.status(404).json({ message: 'Event not found' });
+    }
+
+    const count = await Photo.countDocuments({ event: eventId, uploadedBy: userId });
+    res.status(200).json({ count, maxImagesPerUser: photoEvent.maxImagesPerUser });
+  } catch (error) {
+    logger.error('Failed to get uploaded photos count', error);
+    res.status(500).json({ message: 'Failed to get uploaded photos count', error: error.message });
+  }
+};
+
+
+// New endpoint to get the number of likes a user has given for a specific event
+const getUserLikesCount = async (req, res) => {
+  const { eventId } = req.params;
+  const userId = req.user.userId;
+
+  try {
+    const photoEvent = await PhotographyEvent.findById(eventId);
+    if (!photoEvent) {
+      return res.status(404).json({ message: 'Event not found' });
+    }
+
+    const count = await Photo.countDocuments({ event: eventId, likes: userId });
+    res.status(200).json({ count, maxLikesPerUser: photoEvent.maxLikesPerUser });
+  } catch (error) {
+    logger.error('Failed to get likes count', error);
+    res.status(500).json({ message: 'Failed to get likes count', error: error.message });
+  }
+};
+
+
+module.exports = { generateUploadUrl, getThemes, confirmUpload, getAllPhotos, getPhotosByEvent, likePhoto, determineWinner, getUserUploadedPhotosCount,getUserLikesCount };

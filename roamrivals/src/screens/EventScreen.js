@@ -1,5 +1,3 @@
-// File: roamrivals/src/screens/EventScreen.js
-
 import React, { useState, useEffect, useContext, useCallback } from 'react';
 import { View, Text, FlatList, StyleSheet, ActivityIndicator, Button, Alert, Image } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
@@ -15,6 +13,8 @@ const EventScreen = ({ navigation }) => {
   const [selectedEvent, setSelectedEvent] = useState(null);
   const [photos, setPhotos] = useState([]);
   const [photoLoading, setPhotoLoading] = useState(false);
+  const [remainingLikes, setRemainingLikes] = useState(0);
+  const [maxLikes, setMaxLikes] = useState(0);
 
   const fetchEvents = async () => {
     setLoading(true);
@@ -54,6 +54,16 @@ const EventScreen = ({ navigation }) => {
     }
   };
 
+  const fetchLikesCount = async (eventId) => {
+    try {
+      const response = await apiClient.get(`/photos/${eventId}/userLikesCount`);
+      setRemainingLikes(response.data.maxLikesPerUser - response.data.count);
+      setMaxLikes(response.data.maxLikesPerUser);
+    } catch (error) {
+      console.error('Failed to load likes count', error);
+    }
+  };
+
   useFocusEffect(
     useCallback(() => {
       fetchEvents();
@@ -84,6 +94,7 @@ const EventScreen = ({ navigation }) => {
     setSelectedEvent(event);
     if (event.eventType === 'photography') {
       await fetchPhotos(event._id);
+      await fetchLikesCount(event._id);
     }
   };
 
@@ -95,6 +106,7 @@ const EventScreen = ({ navigation }) => {
       setPhotos((prevPhotos) => prevPhotos.map(photo => 
         photo._id === photoId ? { ...photo, likesCount: (photo.likesCount || 0) + 1 } : photo
       ));
+      setRemainingLikes((prevRemainingLikes) => prevRemainingLikes - 1);
       Alert.alert('Success', 'Photo liked successfully!');
     } catch (error) {
       if (!error.response) {
@@ -128,6 +140,9 @@ const EventScreen = ({ navigation }) => {
           {selectedEvent ? (
             <>
               <Button title="Back to Events" onPress={() => setSelectedEvent(null)} />
+              {selectedEvent.logoPresignedUrl && (
+                <Image source={{ uri: selectedEvent.logoPresignedUrl }} style={styles.logo} />
+              )}
               <Text style={styles.title}>{selectedEvent.title}</Text>
               <Text>{selectedEvent.description}</Text>
               {selectedEvent.eventType === 'photography' && (
@@ -136,23 +151,27 @@ const EventScreen = ({ navigation }) => {
                   {photoLoading ? (
                     <ActivityIndicator size="large" color="#0000ff" />
                   ) : (
-                    <FlatList
-                      data={photos}
-                      keyExtractor={(item) => item._id}
-                      renderItem={({ item }) => (
-                        <View style={styles.photoContainer}>
-                          <Image
-                            source={{ uri: item.imageUrl }}
-                            style={styles.photo}
-                          />
-                          <Text>Likes: {item.likesCount || 0}</Text>
-                          <Button
-                            title="Like"
-                            onPress={() => handleLikePhoto(item._id)}
-                          />
-                        </View>
-                      )}
-                    />
+                    <>
+                      <Text>Remaining Likes: {remainingLikes}</Text>
+                      <FlatList
+                        data={photos}
+                        keyExtractor={(item) => item._id}
+                        renderItem={({ item }) => (
+                          <View style={styles.photoContainer}>
+                            <Image
+                              source={{ uri: item.imageUrl }}
+                              style={styles.photo}
+                            />
+                            <Text>Likes: {item.likesCount || 0}</Text>
+                            <Button
+                              title="Like"
+                              onPress={() => handleLikePhoto(item._id)}
+                              disabled={remainingLikes <= 0}
+                            />
+                          </View>
+                        )}
+                      />
+                    </>
                   )}
                   <Button 
                     title="Submit a Photo"
@@ -167,6 +186,9 @@ const EventScreen = ({ navigation }) => {
               keyExtractor={(item) => item._id}
               renderItem={({ item }) => (
                 <View style={styles.eventItem}>
+                  {item.logoPresignedUrl && (
+                    <Image source={{ uri: item.logoPresignedUrl }} style={styles.logo} />
+                  )}
                   <Text style={styles.title}>{item.title}</Text>
                   <Text>{item.description}</Text>
                   <Button title="Register" onPress={() => handleRegister(item._id)} />
@@ -209,6 +231,11 @@ const styles = StyleSheet.create({
     width: '100%',
     height: 200,
     marginVertical: 10,
+  },
+  logo: {
+    width: '100%',
+    height: 200,
+    marginBottom: 10,
   },
 });
 
