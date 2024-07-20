@@ -1,5 +1,4 @@
 // File: backend/controllers/photoController.js
-
 const Photo = require('../models/photoModel');
 const { getPresignedUrl, getUploadPresignedUrl } = require('../utils/s3Utils');
 const { PhotographyEvent } = require('../models/eventModel');
@@ -8,8 +7,8 @@ const { sendWinnerNotificationEmail } = require('../utils/emailService'); // Imp
 const User = require('../models/userModel'); // Ensure to include User model
 const Leaderboard = require('../models/leaderboardModel'); // Import the Leaderboard model
 
-const generateS3Key = (uploadedBy) => {
-  return `photos/${Date.now().toString()}_${uploadedBy}.jpg`;
+const generateS3Key = (eventId, uploadedBy) => {
+  return `photos/${eventId}/${uploadedBy}/${Date.now().toString()}_user_image.jpg`;
 };
 
 const getThemes = async (req, res) => {
@@ -60,7 +59,7 @@ const generateUploadUrl = async (req, res) => {
       return res.status(400).json({ message: 'Max photos limit reached for this event' });
     }
 
-    const key = generateS3Key(uploadedBy);
+    const key = generateS3Key(eventId, uploadedBy);
     const uploadUrl = await getUploadPresignedUrl(key, 3600, { themeChosen }); // URL valid for 1 hour
 
     res.status(201).json({ uploadUrl, key, eventId, uploadedBy, themeChosen });
@@ -300,3 +299,4 @@ const getUserLikesCount = async (req, res) => {
 
 
 module.exports = { generateUploadUrl, getThemes, confirmUpload, getAllPhotos, getPhotosByEvent, likePhoto, determineWinner, getUserUploadedPhotosCount,getUserLikesCount };
+
