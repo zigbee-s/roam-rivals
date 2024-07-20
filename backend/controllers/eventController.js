@@ -1,5 +1,6 @@
 const { Event, QuizEvent, PhotographyEvent } = require('../models/eventModel');
 const User = require('../models/userModel');
+const { getUploadPresignedUrl } = require('../utils/s3Utils');
 const { sendEventRegistrationEmail } = require('../utils/emailService');
 const logger = require('../logger');
 
@@ -29,6 +30,13 @@ async function createEvent(req, res) {
         event = new Event({ title, description, startingDate, eventEndDate, location, createdBy, eventType });
     }
 
+    if (req.file) {
+      const { path, mimetype } = req.file;
+      const key = `event-logos/${Date.now().toString()}_${path}`;
+      const uploadUrl = await getUploadPresignedUrl(key, 3600, { mimetype }); // URL valid for 1 hour
+      event.logoImageUrl = uploadUrl;
+    }
+
     await event.save();
     logger.info(`Event created: ${event._id} by user: ${createdBy}`);
     res.status(201).json(event);
@@ -37,6 +45,7 @@ async function createEvent(req, res) {
     res.status(500).json({ message: 'Failed to create event', error: error.message });
   }
 }
+
 
 async function getEvents(req, res) {
   try {

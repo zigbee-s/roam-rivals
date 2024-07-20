@@ -217,7 +217,7 @@ async function determineWinner(req, res) {
     for (let rank = 0; rank < topPhotos.length; rank++) {
       const photo = topPhotos[rank];
       const user = await User.findById(photo.uploadedBy);
-      await sendWinnerNotificationEmail(user.email, photo.title || 'Untitled', photo.likes.length);
+      await sendWinnerNotificationEmail(user.email, photo.themeChosen || 'Untitled', photo.likes.length);
       photo.isWinner = true;
       await photo.save();
 
@@ -230,7 +230,7 @@ async function determineWinner(req, res) {
         date: event.eventEndDate,
         details: {
           likes: photo.likes.length.toString(),
-          title: photo.title || 'Untitled',
+          title: photo.themeChosen || 'Untitled',
         }
       });
       await leaderboardEntry.save();
