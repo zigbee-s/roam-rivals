@@ -7,7 +7,7 @@ const logger = require('../logger');
 async function createEvent(req, res) {
   const { 
     title, description, startingDate, eventEndDate, location, eventType, maxPhotos, 
-    themes, photoSubmissionDeadline, maxImagesPerUser, maxLikesPerUser, logoUrl, ...rest 
+    themes, photoSubmissionDeadline, maxImagesPerUser, maxLikesPerUser, logoUrl, difficulty, ...rest 
   } = req.body;
   const createdBy = req.user.userId;
 
@@ -20,7 +20,7 @@ async function createEvent(req, res) {
           return res.status(403).json({ message: 'Only admins can create quiz events' });
         }
         event = new QuizEvent({ 
-          title, description, startingDate, eventEndDate, location, createdBy, eventType, ...rest 
+          title, description, startingDate, eventEndDate, location, createdBy, eventType, difficulty, ...rest 
         });
         break;
       case 'photography':
@@ -30,12 +30,12 @@ async function createEvent(req, res) {
         }
         event = new PhotographyEvent({ 
           title, description, startingDate, eventEndDate, location, createdBy, eventType, maxPhotos, 
-          themes, photoSubmissionDeadline, maxImagesPerUser, maxLikesPerUser, ...rest 
+          themes, photoSubmissionDeadline, maxImagesPerUser, maxLikesPerUser, difficulty, ...rest 
         });
         break;
       default:
         event = new Event({ 
-          title, description, startingDate, eventEndDate, location, createdBy, eventType 
+          title, description, startingDate, eventEndDate, location, createdBy, eventType, difficulty 
         });
     }
 

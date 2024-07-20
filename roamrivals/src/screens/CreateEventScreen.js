@@ -18,17 +18,12 @@ const validationSchema = yup.object().shape({
   eventEndTime: yup.string().required('Event end time is required'),
   location: yup.string().required('Location is required'),
   eventType: yup.string().required('Event type is required'),
+  difficulty: yup.number().required('Difficulty is required').min(1).max(5).integer(),
   numberOfQuestions: yup.number()
     .nullable()
     .when('eventType', {
       is: 'quiz',
       then: schema => schema.required('Number of questions is required for quiz').positive().integer(),
-    }),
-  difficulty: yup.string()
-    .nullable()
-    .when('eventType', {
-      is: 'quiz',
-      then: schema => schema.required('Difficulty is required for quiz'),
     }),
   timeLimit: yup.number()
     .nullable()
@@ -199,8 +194,8 @@ const CreateEventScreen = ({ navigation }) => {
           eventEndTime: '18:00',
           location: 'Central Park',
           eventType: 'photography',
+          difficulty: '3',  // Sample value
           numberOfQuestions: '',
-          difficulty: '',
           timeLimit: '',
           questions: '',
           maxPhotos: '100',
@@ -280,6 +275,15 @@ const CreateEventScreen = ({ navigation }) => {
               <Picker.Item label="Quiz" value="quiz" />
               <Picker.Item label="Photography" value="photography" />
             </Picker>
+            <TextInput
+              style={styles.input}
+              placeholder="Difficulty (1-5)"
+              onChangeText={handleChange('difficulty')}
+              onBlur={handleBlur('difficulty')}
+              value={values.difficulty}
+              keyboardType="numeric"
+            />
+            {touched.difficulty && errors.difficulty && <Text style={styles.errorText}>{errors.difficulty}</Text>}
             {values.eventType === 'quiz' && (
               <>
                 <TextInput
@@ -291,14 +295,6 @@ const CreateEventScreen = ({ navigation }) => {
                   keyboardType="numeric"
                 />
                 {touched.numberOfQuestions && errors.numberOfQuestions && <Text style={styles.errorText}>{errors.numberOfQuestions}</Text>}
-                <TextInput
-                  style={styles.input}
-                  placeholder="Difficulty"
-                  onChangeText={handleChange('difficulty')}
-                  onBlur={handleBlur('difficulty')}
-                  value={values.difficulty}
-                />
-                {touched.difficulty && errors.difficulty && <Text style={styles.errorText}>{errors.difficulty}</Text>}
                 <TextInput
                   style={styles.input}
                   placeholder="Time Limit (minutes)"

@@ -12,8 +12,9 @@ const eventSchema = new Schema({
   createdBy: { type: Schema.Types.ObjectId, ref: 'User', required: true },
   eventType: { type: String, required: true, enum: ['general', 'quiz', 'photography'] },
   participants: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
-  logoImageUrl: { type: String }, // Add this field for logo image URL
-  winners: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }] // Add winners field to store winner IDs
+  logoImageUrl: { type: String }, // Field for logo image URL
+  winners: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }], // Field to store winner IDs
+  difficulty: { type: Number, required: true, min: 1, max: 5 }, // Field for difficulty, integer from 1-5
 }, { discriminatorKey: 'eventType' });
 
 // General event status methods
@@ -32,7 +33,7 @@ const Event = mongoose.model('Event', eventSchema);
 // Quiz Event Schema
 const quizEventSchema = new Schema({
   numberOfQuestions: { type: Number, required: true },
-  difficulty: { type: String, required: true },
+  difficulty: { type: Number, required: true, min: 1, max: 5 }, // Ensure difficulty field is included
   timeLimit: { type: Number, required: true },
   questions: [{
     question: { type: String, required: true },
@@ -50,7 +51,8 @@ const photographyEventSchema = new Schema({
   photoSubmissionDeadline: { type: Date, required: true },
   photos: [{ type: Schema.Types.ObjectId, ref: 'Photo' }],
   maxImagesPerUser: { type: Number, required: true },  // New field
-  maxLikesPerUser: { type: Number, required: true }    // New field
+  maxLikesPerUser: { type: Number, required: true },    // New field
+  difficulty: { type: Number, required: true, min: 1, max: 5 }, // Ensure difficulty field is included
 });
 
 // Photography event status methods
