@@ -299,4 +299,3 @@ const getUserLikesCount = async (req, res) => {
 
 
 module.exports = { generateUploadUrl, getThemes, confirmUpload, getAllPhotos, getPhotosByEvent, likePhoto, determineWinner, getUserUploadedPhotosCount,getUserLikesCount };
-

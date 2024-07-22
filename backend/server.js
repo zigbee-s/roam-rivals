@@ -6,12 +6,13 @@ const authRoutes = require('./routes/authRoutes');
 const userRoutes = require('./routes/userRoutes');
 const eventRoutes = require('./routes/eventRoutes');
 const photoRoutes = require('./routes/photoRoutes');
-const leaderboardRoutes = require('./routes/leaderboardRoutes')
+const leaderboardRoutes = require('./routes/leaderboardRoutes');
 const rateLimit = require('express-rate-limit');
 const expressWinston = require('express-winston');
 const winston = require('winston');
 const logger = require('./logger');
 const middlewares = require('./middlewares/middlewares'); // Import the common middlewares
+const createAdminUser = require('./utils/adminSetup'); // Import the admin setup function
 
 const app = express();
 
@@ -48,8 +49,7 @@ app.use('/auth', authRoutes);
 app.use('/user', userRoutes);
 app.use('/events', eventRoutes);
 app.use('/photos', photoRoutes);
-app.use('/leaderboard', leaderboardRoutes)
-
+app.use('/leaderboard', leaderboardRoutes);
 
 // Error handling middleware
 app.use((err, req, res, next) => {
@@ -64,6 +64,10 @@ app.use((err, req, res, next) => {
 (async () => {
   try {
     await connectDB();
+
+    // Ensure admin user is created
+    await createAdminUser();
+
     const PORT = process.env.PORT || 3000;
     app.listen(PORT, () => {
       logger.info(`Server is running on port ${PORT}`);
