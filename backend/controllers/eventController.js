@@ -1,13 +1,15 @@
+// backend/controllers/eventController.js
+
 const { Event, QuizEvent, PhotographyEvent } = require('../models/eventModel');
 const User = require('../models/userModel');
-const { getUploadPresignedUrl, getPresignedUrl } = require('../utils/s3Utils');
+const { getUploadGIFPresignedUrl, getPresignedUrl } = require('../utils/s3Utils');
 const { sendEventRegistrationEmail } = require('../utils/emailService');
 const logger = require('../logger');
 
 async function createEvent(req, res) {
   const { 
     title, description, startingDate, eventEndDate, location, eventType, maxPhotos, 
-    themes, photoSubmissionDeadline, maxImagesPerUser, maxLikesPerUser, logoUrl, difficulty, ...rest 
+    themes, photoSubmissionDeadline, maxImagesPerUser, maxLikesPerUser, logoGIFKey, difficulty, entryFee, isSpecial, ...rest 
   } = req.body;
   const createdBy = req.user.userId;
 
@@ -20,7 +22,7 @@ async function createEvent(req, res) {
           return res.status(403).json({ message: 'Only admins can create quiz events' });
         }
         event = new QuizEvent({ 
-          title, description, startingDate, eventEndDate, location, createdBy, eventType, difficulty, ...rest 
+          title, description, startingDate, eventEndDate, location, createdBy, eventType, difficulty, entryFee, isSpecial, ...rest 
         });
         break;
       case 'photography':
@@ -30,18 +32,18 @@ async function createEvent(req, res) {
         }
         event = new PhotographyEvent({ 
           title, description, startingDate, eventEndDate, location, createdBy, eventType, maxPhotos, 
-          themes, photoSubmissionDeadline, maxImagesPerUser, maxLikesPerUser, difficulty, ...rest 
+          themes, photoSubmissionDeadline, maxImagesPerUser, maxLikesPerUser, difficulty, entryFee, isSpecial, ...rest 
         });
         break;
       default:
         event = new Event({ 
-          title, description, startingDate, eventEndDate, location, createdBy, eventType, difficulty 
+          title, description, startingDate, eventEndDate, location, createdBy, eventType, difficulty, entryFee, isSpecial 
         });
     }
 
-    // Add the logo image URL if provided
-    if (logoUrl) {
-      event.logoImageUrl = logoUrl;
+    // Add the logo GIF key if provided
+    if (logoGIFKey) {
+      event.logoGIFKey = logoGIFKey;
     }
 
     await event.save();
@@ -53,16 +55,16 @@ async function createEvent(req, res) {
   }
 }
 
-async function generateLogoUploadUrl(req, res) {
+async function generateLogoGIFUploadUrl(req, res) {
   const { title } = req.body;
-  const key = `event-logos/${Date.now().toString()}_${title.replace(/ /g, '_')}.jpg`;
+  const key = `event-logos/${Date.now().toString()}_${title.replace(/ /g, '_')}.gif`;
 
   try {
-    const uploadUrl = await getUploadPresignedUrl(key, 3600, {}); // URL valid for 1 hour
+    const uploadUrl = await getUploadGIFPresignedUrl(key, 3600, { 'Content-Type': 'image/gif' }); // URL valid for 1 hour
     res.status(201).json({ uploadUrl, key });
   } catch (error) {
-    logger.error('Failed to generate upload URL', error);
-    res.status(500).json({ message: 'Failed to generate upload URL', error: error.message });
+    logger.error('Failed to generate upload URL for GIF', error);
+    res.status(500).json({ message: 'Failed to generate upload URL for GIF', error: error.message });
   }
 }
 
@@ -70,8 +72,8 @@ async function getEvents(req, res) {
   try {
     const events = await Event.find();
     const eventsWithPresignedUrls = await Promise.all(events.map(async (event) => {
-      if (event.logoImageUrl) {
-        const logoPresignedUrl = await getPresignedUrl(event.logoImageUrl, 3600);
+      if (event.logoGIFKey) {
+        const logoPresignedUrl = await getPresignedUrl(event.logoGIFKey, 3600);
         return { ...event.toObject(), logoPresignedUrl };
       }
       return event.toObject();
@@ -94,8 +96,8 @@ async function getEventById(req, res) {
       return res.status(404).json({ message: 'Event not found' });
     }
 
-    if (event.logoImageUrl) {
-      const logoPresignedUrl = await getPresignedUrl(event.logoImageUrl, 3600);
+    if (event.logoGIFKey) {
+      const logoPresignedUrl = await getPresignedUrl(event.logoGIFKey, 3600);
       event.logoPresignedUrl = logoPresignedUrl;
     }
 
@@ -225,4 +227,4 @@ async function checkUserRegistration(req, res) {
   }
 }
 
-module.exports = { createEvent, generateLogoUploadUrl, getEvents, getEventById, updateEvent, deleteEvent, registerEvent, getEventStatus, checkUserRegistration };
+module.exports = { createEvent, generateLogoGIFUploadUrl, getEvents, getEventById, updateEvent, deleteEvent, registerEvent, getEventStatus, checkUserRegistration };

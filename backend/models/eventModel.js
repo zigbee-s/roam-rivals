@@ -12,12 +12,13 @@ const eventSchema = new Schema({
   createdBy: { type: Schema.Types.ObjectId, ref: 'User', required: true },
   eventType: { type: String, required: true, enum: ['general', 'quiz', 'photography'] },
   participants: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
-  logoImageUrl: { type: String }, // Field for logo image URL
-  winners: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }], // Field to store winner IDs
-  difficulty: { type: Number, required: true, min: 1, max: 5 }, // Field for difficulty, integer from 1-5
+  logoGIFKey: { type: String }, // Store the key for the GIF
+  winners: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
+  difficulty: { type: Number, required: true, min: 1, max: 5 },
+  entryFee: { type: Number, required: true }, // New field for entry fee
+  isSpecial: { type: Boolean, default: false } // New field to mark special events
 }, { discriminatorKey: 'eventType' });
 
-// General event status methods
 eventSchema.methods.isOpened = function () {
   const now = new Date();
   return now >= this.startingDate && now <= this.eventEndDate;
@@ -30,10 +31,9 @@ eventSchema.methods.isClosed = function () {
 
 const Event = mongoose.model('Event', eventSchema);
 
-// Quiz Event Schema
 const quizEventSchema = new Schema({
   numberOfQuestions: { type: Number, required: true },
-  difficulty: { type: Number, required: true, min: 1, max: 5 }, // Ensure difficulty field is included
+  difficulty: { type: Number, required: true, min: 1, max: 5 },
   timeLimit: { type: Number, required: true },
   questions: [{
     question: { type: String, required: true },
@@ -44,18 +44,16 @@ const quizEventSchema = new Schema({
 
 const QuizEvent = Event.discriminator('quiz', quizEventSchema);
 
-// Photography Event Schema
 const photographyEventSchema = new Schema({
   maxPhotos: { type: Number, required: true },
-  themes: [{ type: String, required: true }], // Ensure themes are properly defined
+  themes: [{ type: String, required: true }],
   photoSubmissionDeadline: { type: Date, required: true },
   photos: [{ type: Schema.Types.ObjectId, ref: 'Photo' }],
-  maxImagesPerUser: { type: Number, required: true },  // New field
-  maxLikesPerUser: { type: Number, required: true },    // New field
-  difficulty: { type: Number, required: true, min: 1, max: 5 }, // Ensure difficulty field is included
+  maxImagesPerUser: { type: Number, required: true },
+  maxLikesPerUser: { type: Number, required: true },
+  difficulty: { type: Number, required: true, min: 1, max: 5 },
 });
 
-// Photography event status methods
 photographyEventSchema.methods.isSubmissionStarted = function () {
   const now = new Date();
   return now >= this.photoSubmissionDeadline;

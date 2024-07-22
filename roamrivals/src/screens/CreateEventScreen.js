@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import { Picker } from '@react-native-picker/picker';
-import { View, TextInput, StyleSheet, Alert, ActivityIndicator, ScrollView, Text, Image, Button } from 'react-native';
+import { View, TextInput, StyleSheet, Alert, ActivityIndicator, ScrollView, Text, Image, Button, Switch } from 'react-native';
 import { Formik } from 'formik';
 import * as yup from 'yup';
 import * as ImagePicker from 'expo-image-picker';
@@ -19,6 +19,8 @@ const validationSchema = yup.object().shape({
   location: yup.string().required('Location is required'),
   eventType: yup.string().required('Event type is required'),
   difficulty: yup.number().required('Difficulty is required').min(1).max(5).integer(),
+  entryFee: yup.number().required('Entry fee is required').positive(),
+  isSpecial: yup.boolean().required('Special status is required'),
   numberOfQuestions: yup.number()
     .nullable()
     .when('eventType', {
@@ -118,11 +120,11 @@ const CreateEventScreen = ({ navigation }) => {
     setLoading(true);
     setErrorMessage('');
     try {
-      let logoUrl = null;
+      let logoGIFKey = null;
 
       if (logoImage) {
         const presignedUrlResponse = await apiClient.post(
-          `/events/generate-upload-url/logo`,
+          `/events/generate-upload-url/gif`,
           { title: values.title }
         );
 
@@ -140,7 +142,7 @@ const CreateEventScreen = ({ navigation }) => {
           body: blob,
         });
 
-        logoUrl = key; // Use the key as the URL to be saved in the event
+        logoGIFKey = key; // Use the key as the URL to be saved in the event
       }
 
       let quizQuestions = [];
@@ -170,7 +172,7 @@ const CreateEventScreen = ({ navigation }) => {
         eventEndDate: eventEndDateTime.toISOString(),
         photoSubmissionDeadline: photoSubmissionDeadline.toISOString(),
         themes: themesArray,
-        logoUrl,
+        logoGIFKey, // Save the key for the GIF
       });
       Alert.alert('Success', 'Event created successfully');
       navigation.navigate('Events', { refresh: true });
@@ -195,6 +197,8 @@ const CreateEventScreen = ({ navigation }) => {
           location: 'Central Park',
           eventType: 'photography',
           difficulty: '3',  // Sample value
+          entryFee: '0', // Sample value
+          isSpecial: false, // Sample value
           numberOfQuestions: '',
           timeLimit: '',
           questions: '',
@@ -284,6 +288,22 @@ const CreateEventScreen = ({ navigation }) => {
               keyboardType="numeric"
             />
             {touched.difficulty && errors.difficulty && <Text style={styles.errorText}>{errors.difficulty}</Text>}
+            <TextInput
+              style={styles.input}
+              placeholder="Entry Fee"
+              onChangeText={handleChange('entryFee')}
+              onBlur={handleBlur('entryFee')}
+              value={values.entryFee}
+              keyboardType="numeric"
+            />
+            {touched.entryFee && errors.entryFee && <Text style={styles.errorText}>{errors.entryFee}</Text>}
+            <View style={styles.switchContainer}>
+              <Text>Special Event</Text>
+              <Switch
+                value={values.isSpecial}
+                onValueChange={(value) => setFieldValue('isSpecial', value)}
+              />
+            </View>
             {values.eventType === 'quiz' && (
               <>
                 <TextInput
@@ -371,7 +391,7 @@ const CreateEventScreen = ({ navigation }) => {
                 {touched.maxLikesPerUser && errors.maxLikesPerUser && <Text style={styles.errorText}>{errors.maxLikesPerUser}</Text>}
               </>
             )}
-            <Button title="Pick a logo image" onPress={pickImage} />
+            <Button title="Pick a logo GIF" onPress={pickImage} />
             {logoImage && <Image source={{ uri: logoImage }} style={styles.image} />}
             {loading ? (
               <ActivityIndicator size="large" color="#0000ff" />
@@ -412,6 +432,12 @@ const styles = StyleSheet.create({
     width: '100%',
     height: 200,
     marginVertical: 16,
+  },
+  switchContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 10,
   },
 });
 
