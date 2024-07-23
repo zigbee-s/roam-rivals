@@ -195,7 +195,7 @@ async function likePhoto(req, res) {
 
 const determineWinner = async (req, res) => {
   const { eventId } = req.params;
-  const { allowedWinners } = req.body;
+  const { allowedWinners, makePublic } = req.body;
 
   try {
     const event = await PhotographyEvent.findById(eventId).populate('photos');
@@ -203,9 +203,6 @@ const determineWinner = async (req, res) => {
       return res.status(404).json({ message: 'Event not found' });
     }
 
-    if (new Date() < new Date(event.eventEndDate)) {
-      return res.status(400).json({ message: 'Event is still ongoing' });
-    }
 
     // Sort photos by number of likes in descending order
     const sortedPhotos = event.photos.sort((a, b) => b.likes.length - a.likes.length);
@@ -216,48 +213,71 @@ const determineWinner = async (req, res) => {
     // Array to store winners for the leaderboard
     const winners = [];
 
-    // Notify the winners and update their isWinner status
-    for (let rank = 0; rank < topPhotos.length; rank++) {
-      const photo = topPhotos[rank];
-      const user = await User.findById(photo.uploadedBy);
-      await sendWinnerNotificationEmail(user.email, photo.themeChosen || 'Untitled', photo.likes.length);
-      photo.isWinner = true;
-      await photo.save();
+    if (makePublic === 'Yes') {
+      // Notify the winners and update their isWinner status
+      if (new Date() < new Date(event.eventEndDate)) {
+        return res.status(400).json({ message: 'Event is still ongoing' });
+      }
+      
+      for (let rank = 0; rank < topPhotos.length; rank++) {
+        const photo = topPhotos[rank];
+        const user = await User.findById(photo.uploadedBy);
+        await sendWinnerNotificationEmail(user.email, photo.themeChosen || 'Untitled', photo.likes.length);
+        photo.isWinner = true;
+        await photo.save();
 
-      // Prepare winner details for leaderboard
-      winners.push({
-        winner: user._id,
-        rank: rank + 1,
-        details: {
-          likes: photo.likes.length.toString(),
-          theme: photo.themeChosen || 'Untitled',
-        }
-      });
+        // Prepare winner details for leaderboard
+        winners.push({
+          winner: user._id,
+          rank: rank + 1,
+          details: {
+            likes: photo.likes.length.toString(),
+            theme: photo.themeChosen || 'Untitled',
+          }
+        });
 
-      // Add winner to event's winners list
-      event.winners.push(user._id);
+        // Add winner to event's winners list
+        event.winners.push(user._id);
+      }
+
+      await event.save();
+
+      // Save or update leaderboard entry
+      await Leaderboard.findOneAndUpdate(
+        { event: eventId },
+        {
+          event: eventId,
+          eventType: event.eventType,
+          date: event.eventEndDate,
+          winners: winners
+        },
+        { upsert: true, new: true, setDefaultsOnInsert: true }
+      );
+    } else {
+      // Prepare winner details for leaderboard without updating the database
+      for (let rank = 0; rank < topPhotos.length; rank++) {
+        const photo = topPhotos[rank];
+        const user = await User.findById(photo.uploadedBy);
+
+        // Prepare winner details for leaderboard
+        winners.push({
+          winner: user._id,
+          rank: rank + 1,
+          details: {
+            likes: photo.likes.length.toString(),
+            theme: photo.themeChosen || 'Untitled',
+          }
+        });
+      }
     }
 
-    await event.save();
-
-    // Save or update leaderboard entry
-    const leaderboardEntry = await Leaderboard.findOneAndUpdate(
-      { event: eventId },
-      {
-        event: eventId,
-        eventType: event.eventType,
-        date: event.eventEndDate,
-        winners: winners
-      },
-      { upsert: true, new: true, setDefaultsOnInsert: true }
-    );
-
-    res.status(200).json({ message: 'Winners determined and notified', winners: topPhotos });
+    res.status(200).json({ message: 'Winners determined', winners: topPhotos });
   } catch (error) {
     logger.error('Failed to determine winners', error);
     res.status(500).json({ message: 'Failed to determine winners', error: error.message });
   }
 };
+
 
 const getUserUploadedPhotosCount = async (req, res) => {
   const { eventId } = req.params;
