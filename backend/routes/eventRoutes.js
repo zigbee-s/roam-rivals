@@ -16,7 +16,7 @@ router.post('/register', authMiddleware, registerEvent);
 router.get('/:eventId', getEventById);
 router.put('/:eventId', authMiddleware, roleMiddleware(['admin']), eventLimiter, updateEvent);
 router.delete('/:eventId', authMiddleware, roleMiddleware(['admin']), eventLimiter, deleteEvent);
-router.get('/status/:eventId', authMiddleware, getEventStatus);
+router.get('/:eventId/status', authMiddleware, getEventStatus);
 router.get('/check-registration/:eventId', authMiddleware, checkUserRegistration);
 
 module.exports = router;

@@ -12,11 +12,11 @@ const eventSchema = new Schema({
   createdBy: { type: Schema.Types.ObjectId, ref: 'User', required: true },
   eventType: { type: String, required: true, enum: ['general', 'quiz', 'photography'] },
   participants: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
-  logoGIFKey: { type: String }, // Store the key for the GIF
+  logoGIFKey: { type: String },
   winners: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
   difficulty: { type: Number, required: true, min: 1, max: 5 },
-  entryFee: { type: Number, required: true }, // New field for entry fee
-  isSpecial: { type: Boolean, default: false } // New field to mark special events
+  entryFee: { type: Number, required: true },
+  isSpecial: { type: Boolean, default: false }
 }, { discriminatorKey: 'eventType' });
 
 eventSchema.methods.isOpened = function () {
@@ -54,10 +54,10 @@ const photographyEventSchema = new Schema({
   difficulty: { type: Number, required: true, min: 1, max: 5 },
 });
 
-photographyEventSchema.methods.isSubmissionStarted = function () {
-  const now = new Date();
-  return now >= this.photoSubmissionDeadline;
-};
+// photographyEventSchema.methods.isSubmissionStarted = function () {
+//   const now = new Date();
+//   return now >= this.photoSubmissionDeadline;
+// };
 
 photographyEventSchema.methods.isUploadAllowed = async function (userId) {
   const photos = await mongoose.model('Photo').countDocuments({ uploadedBy: userId, event: this._id });
@@ -67,6 +67,17 @@ photographyEventSchema.methods.isUploadAllowed = async function (userId) {
 photographyEventSchema.methods.isLikeAllowed = async function (userId) {
   const likes = await mongoose.model('Photo').countDocuments({ likes: userId, event: this._id });
   return likes < this.maxLikesPerUser;
+};
+
+// New helper methods for additional criteria
+photographyEventSchema.methods.isUploadPeriod = function () {
+  const now = new Date();
+  return now >= this.startingDate && now <= this.photoSubmissionDeadline;
+};
+
+photographyEventSchema.methods.isViewingAllowed = function () {
+  const now = new Date();
+  return now > this.photoSubmissionDeadline;
 };
 
 const PhotographyEvent = Event.discriminator('photography', photographyEventSchema);

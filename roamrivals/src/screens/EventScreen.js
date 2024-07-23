@@ -15,6 +15,7 @@ const EventScreen = ({ navigation }) => {
   const [photoLoading, setPhotoLoading] = useState(false);
   const [remainingLikes, setRemainingLikes] = useState(0);
   const [maxLikes, setMaxLikes] = useState(0);
+  const [eventStatuses, setEventStatuses] = useState({});
 
   const fetchEvents = async () => {
     setLoading(true);
@@ -22,6 +23,14 @@ const EventScreen = ({ navigation }) => {
     try {
       const response = await apiClient.get('/events');
       setEvents(response.data);
+      
+      const statuses = await Promise.all(response.data.map(event => fetchEventStatus(event._id)));
+      const statusMap = {};
+      response.data.forEach((event, index) => {
+        statusMap[event._id] = statuses[index];
+      });
+      setEventStatuses(statusMap);
+
     } catch (error) {
       if (!error.response) {
         setError('Unable to connect to the backend. Please try again later.');
@@ -35,6 +44,16 @@ const EventScreen = ({ navigation }) => {
     }
   };
 
+  const fetchEventStatus = async (eventId) => {
+    try {
+      const response = await apiClient.get(`/events/${eventId}/status`);
+      return response.data;
+    } catch (error) {
+      console.error('Failed to fetch event status', error);
+      return null;
+    }
+  };
+
   const fetchPhotos = async (eventId) => {
     setPhotoLoading(true);
     setError(null);
@@ -45,9 +64,9 @@ const EventScreen = ({ navigation }) => {
       if (!error.response) {
         setError('Unable to connect to the backend. Please try again later.');
       } else if (error.response.status === 403) {
-        setError('Access forbidden: You do not have permission to access this resource.');
+        console.log(error.message);
       } else {
-        setError(error.response.data.message || 'An error occurred');
+        console.log(error.message);
       }
     } finally {
       setPhotoLoading(false);
@@ -98,11 +117,11 @@ const EventScreen = ({ navigation }) => {
     }
   };
 
-  const handleLikePhoto = async (photoId) => {
+  const handleLikePhoto = async (eventId, photoId) => {
     setLoading(true);
     setError(null);
     try {
-      const response = await apiClient.post('/photos/like', { photoId });
+      const response = await apiClient.post(`/photos/${eventId}/like`, { photoId });
       setPhotos((prevPhotos) => prevPhotos.map(photo => 
         photo._id === photoId ? { ...photo, likesCount: (photo.likesCount || 0) + 1 } : photo
       ));
@@ -165,7 +184,7 @@ const EventScreen = ({ navigation }) => {
                             <Text>Likes: {item.likesCount || 0}</Text>
                             <Button
                               title="Like"
-                              onPress={() => handleLikePhoto(item._id)}
+                              onPress={() => handleLikePhoto(selectedEvent._id, item._id)}
                               disabled={remainingLikes <= 0}
                             />
                           </View>
@@ -191,6 +210,7 @@ const EventScreen = ({ navigation }) => {
                   )}
                   <Text style={styles.title}>{item.title}</Text>
                   <Text>{item.description}</Text>
+                  <Text>Status: {eventStatuses[item._id] ? JSON.stringify(eventStatuses[item._id]) : 'Loading...'}</Text>
                   <Button title="Register" onPress={() => handleRegister(item._id)} />
                   <Button title="View Details" onPress={() => handleEventPress(item)} />
                 </View>

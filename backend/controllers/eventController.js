@@ -197,7 +197,8 @@ async function getEventStatus(req, res) {
     };
 
     if (event.eventType === 'photography') {
-      status.isSubmissionStarted = event.isSubmissionStarted();
+      status.isUploadPeriod = event.isUploadPeriod();
+      status.isViewingAllowed = event.isViewingAllowed();
     }
 
     res.status(200).json(status);
