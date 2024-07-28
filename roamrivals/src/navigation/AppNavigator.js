@@ -9,16 +9,18 @@ import LoginScreen from '../screens/LoginScreen';
 import ProfileScreen from '../screens/ProfileScreen';
 import HomeScreen from '../screens/HomeScreen';
 import EventScreen from '../screens/EventScreen';
+import OtpLoginScreen from '../screens/OtpLoginScreen';
 import CreateEventScreen from '../screens/CreateEventScreen';
 import AddQuestionsScreen from '../screens/AddQuestionsScreen';
-import UploadImageScreen from '../screens/UploadImageScreen'; // Import the UploadImageScreen
 import { getToken } from '../api/tokenStorage';
 import apiClient from '../api/apiClient';
 import { navigationRef } from '../api/navigationRef';
 import ErrorScreen from '../components/ErrorScreen';
 import { ErrorContext } from '../context/ErrorContext';
 import NetworkStatus from '../components/NetworkStatus';
-import LeaderboardScreen from '../screens/LeaderboardScreen';
+import QuizLandingScreen from '../screens/QuizLandingScreen';
+import PhotoGraphyScreen from '../screens/PhotoGraphyScreen';
+import PhotoGalleryScreen from '../screens/PhotoGalleryScreen';
 
 const Stack = createNativeStackNavigator();
 
@@ -80,11 +82,12 @@ const AppNavigator = () => {
         {error ? (
           <ErrorScreen onRetry={handleRetry} />
         ) : (
-          <Stack.Navigator initialRouteName={initialRoute}>
+          <Stack.Navigator initialRouteName={initialRoute}screenOptions={{ headerShown: false }}>
             <Stack.Screen name="Home" component={HomeScreen} />
             <Stack.Screen name="Signup" component={SignupScreen} />
             <Stack.Screen name="OtpVerification" component={OtpVerificationScreen} />
             <Stack.Screen name="CompleteSignup" component={CompleteSignupScreen} />
+            <Stack.Screen name="OtpLoginScreen" component={OtpLoginScreen} />
             <Stack.Screen name="Login">
               {(props) => <LoginScreen {...props} setUserRoles={setUserRoles} />}
             </Stack.Screen>
@@ -92,10 +95,11 @@ const AppNavigator = () => {
             <Stack.Screen name="Events" options={profileButton}>
               {(props) => <EventScreen {...props} userRoles={userRoles} />}
             </Stack.Screen>
-            <Stack.Screen name="LeaderboardScreen" component={LeaderboardScreen} />
             <Stack.Screen name="CreateEvent" component={CreateEventScreen} options={profileButton} />
             <Stack.Screen name="AddQuestions" component={AddQuestionsScreen} />
-            <Stack.Screen name="UploadImage" component={UploadImageScreen} /> 
+            <Stack.Screen name="QuizLandingScreen" component={QuizLandingScreen} />
+            <Stack.Screen name="PhotoGraphyScreen" component={PhotoGraphyScreen} />
+            <Stack.Screen name="PhotoGalleryScreen" component={PhotoGalleryScreen} />
           </Stack.Navigator>
         )}
       </NetworkStatus>

@@ -396,7 +396,7 @@ const CreateEventScreen = ({ navigation }) => {
             {loading ? (
               <ActivityIndicator size="large" color="#0000ff" />
             ) : (
-              <CustomButton title="Create Event" onPress={handleSubmit} disabled={loading} />
+              <CustomButton title="Create Event" onPress={handleSubmit} disabled={loading} style={styles.button}/>
             )}
           </View>
         )}
@@ -409,6 +409,7 @@ const styles = StyleSheet.create({
   container: {
     flexGrow: 1,
     padding: 20,
+    marginTop: 60,
   },
   input: {
     borderWidth: 1,
@@ -438,6 +439,9 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     marginBottom: 10,
+  },
+  button: {
+    marginBottom: 100,
   },
 });
 

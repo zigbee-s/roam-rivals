@@ -1,83 +1,129 @@
-// src/screens/SignupScreen.js
+// src/screens/RegistrationForm.js
 import React, { useState } from 'react';
-import { View, StyleSheet, TextInput, Text, Alert } from 'react-native';
-import { Formik } from 'formik';
-import * as yup from 'yup';
-import apiClient from '../api/apiClient';
-import CustomButton from '../components/CustomButton';
+import { View, Text, Image, StyleSheet, Dimensions, Alert, KeyboardAvoidingView, Platform, TouchableWithoutFeedback, Keyboard } from 'react-native';
+import apiClient from '../api/apiClient'; // Ensure apiClient is imported
+import FormInput from '../components/FormInput';
+import SubmitButton from '../components/SubmitButton';
 
-const validationSchema = yup.object().shape({
-  name: yup.string().required('Name is required'),
-  username: yup.string().required('Username is required'),
-  email: yup.string().email('Invalid email').required('Email is required'),
-  age: yup.number().required('Age is required').positive().integer(),
-});
+const { width, height } = Dimensions.get('window');
 
-const SignupScreen = ({ navigation }) => {
+const RegistrationForm = ({ navigation }) => {
+  const [formData, setFormData] = useState({ name: '', username: '', email: '', age: '' });
+  const [errors, setErrors] = useState({ name: '', username: '', email: '', age: '' });
   const [loading, setLoading] = useState(false);
-  const [errorMessage, setErrorMessage] = useState('');
 
-  const handleInitialSignup = async (values, actions) => {
-    setLoading(true);
-    setErrorMessage('');
-    try {
-      await apiClient.post('/auth/initial-signup', values);
-      navigation.navigate('OtpVerification', { signupData: values });
-    } catch (error) {
-      setErrorMessage(error.response?.data?.message || 'An unexpected error occurred');
-    } finally {
-      setLoading(false);
-      actions.setSubmitting(false);
+  const validate = () => {
+    let valid = true;
+    let errors = { name: '', username: '', email: '', age: '' };
+
+    // Name validation
+    if (!formData.name.trim()) {
+      errors.name = 'Name is required';
+      valid = false;
+    }
+
+    // Username validation
+    if (!formData.username.trim()) {
+      errors.username = 'Username is required';
+      valid = false;
+    }
+
+    // Email validation
+    const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!formData.email.trim()) {
+      errors.email = 'Email is required';
+      valid = false;
+    } else if (!emailPattern.test(formData.email)) {
+      errors.email = 'Invalid email address';
+      valid = false;
+    }
+
+    // Age validation
+    const agePattern = /^[0-9]+$/;
+    if (!formData.age.trim()) {
+      errors.age = 'Age is required';
+      valid = false;
+    } else if (!agePattern.test(formData.age) || parseInt(formData.age) <= 0) {
+      errors.age = 'Invalid age';
+      valid = false;
+    }
+
+    setErrors(errors);
+    return valid;
+  };
+
+  const handleSubmit = async () => {
+    if (validate()) {
+      setLoading(true);
+      try {
+        await apiClient.post('/auth/initial-signup', formData);
+        navigation.navigate('OtpVerification', { signupData: formData });
+        // Alert.alert('Form Submitted', `Name: ${formData.name}, Username: ${formData.username}, Email: ${formData.email}, Age: ${formData.age}`);
+      } catch (error) {
+        Alert.alert('Signup Failed', error.response?.data?.message || 'An unexpected error occurred');
+      } finally {
+        setLoading(false);
+      }
     }
   };
 
+  const allFieldsFilled = formData.name && formData.username && formData.email && formData.age && !errors.name && !errors.username && !errors.email && !errors.age;
+
+  const handleInputChange = (field, value) => {
+    setFormData({ ...formData, [field]: value });
+  };
+
+  const placeholderTextStyle = { fontSize: 18, fontWeight: 'semibold' }; // Adjust the font size as needed
+
   return (
     <View style={styles.container}>
-      <Formik
-        initialValues={{ name: '', username: '', email: '', age: '' }}
-        validationSchema={validationSchema}
-        onSubmit={handleInitialSignup}
-      >
-        {({ handleChange, handleBlur, handleSubmit, values, errors, touched, isSubmitting }) => (
-          <View>
-            <TextInput
-              style={styles.input}
-              placeholder="Name"
-              onChangeText={handleChange('name')}
-              onBlur={handleBlur('name')}
-              value={values.name}
-            />
-            {touched.name && errors.name && <Text style={styles.errorText}>{errors.name}</Text>}
-            <TextInput
-              style={styles.input}
-              placeholder="Username"
-              onChangeText={handleChange('username')}
-              onBlur={handleBlur('username')}
-              value={values.username}
-            />
-            {touched.username && errors.username && <Text style={styles.errorText}>{errors.username}</Text>}
-            <TextInput
-              style={styles.input}
-              placeholder="Email"
-              onChangeText={handleChange('email')}
-              onBlur={handleBlur('email')}
-              value={values.email}
-            />
-            {touched.email && errors.email && <Text style={styles.errorText}>{errors.email}</Text>}
-            <TextInput
-              style={styles.input}
-              placeholder="Age"
-              onChangeText={handleChange('age')}
-              onBlur={handleBlur('age')}
-              value={values.age}
-              keyboardType="numeric"
-            />
-            {touched.age && errors.age && <Text style={styles.errorText}>{errors.age}</Text>}
-            {errorMessage ? <Text style={styles.errorText}>{errorMessage}</Text> : null}
-            <CustomButton onPress={handleSubmit} title="Sign Up" disabled={isSubmitting || loading} />
+      <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+        <View style={styles.inner}>
+          <View style={styles.header}>
+            <Image source={require('../../assets/Registration.png')} style={styles.image} />
           </View>
-        )}
-      </Formik>
+          <View style={styles.formBackground}>
+            <View style={styles.form}>
+              <FormInput
+                placeholder="Name"
+                value={formData.name}
+                onChangeText={(value) => handleInputChange('name', value)}
+                error={errors.name}
+                placeholderTextStyle={placeholderTextStyle}
+              />
+              <FormInput
+                placeholder="Username"
+                value={formData.username}
+                onChangeText={(value) => handleInputChange('username', value)}
+                error={errors.username}
+                placeholderTextStyle={placeholderTextStyle}
+              />
+              <FormInput
+                placeholder="Email"
+                value={formData.email}
+                onChangeText={(value) => handleInputChange('email', value)}
+                keyboardType="email-address"
+                error={errors.email}
+                placeholderTextStyle={placeholderTextStyle}
+              />
+              <FormInput
+                placeholder="Age"
+                value={formData.age}
+                onChangeText={(value) => handleInputChange('age', value)}
+                keyboardType="numeric"
+                error={errors.age}
+                placeholderTextStyle={placeholderTextStyle}
+              />
+              <SubmitButton
+                onPress={handleSubmit}
+                isActive={allFieldsFilled}
+                loading={loading}
+                title="Next"
+              />
+            </View>
+          </View>
+        </View>
+      </TouchableWithoutFeedback>
     </View>
   );
 };
@@ -85,17 +131,40 @@ const SignupScreen = ({ navigation }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+  },
+  inner: {
+    flex: 1,
+    justifyContent: 'flex-end',
+    alignItems: 'center',
+    backgroundColor: '#00072D',
+  },
+  header: {
     justifyContent: 'center',
-    padding: 20,
+    alignItems: 'center',
+    marginTop: width * 0.2,
+    marginBottom: height * 0.02,
   },
-  input: {
-    borderBottomWidth: 1,
-    marginBottom: 12,
-    padding: 8,
+  image: {
+    width: width * 0.8,
+    height: height * 0.3,
+    resizeMode: 'contain',
+    marginBottom: width * 0.1,
   },
-  errorText: {
-    color: 'red',
+  formBackground: {
+    width: '100%',
+    backgroundColor: '#FFFFFF',
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    paddingHorizontal: width * 0.05,
+    paddingVertical: height * 0.03,
+    alignItems: 'center',
+    marginTop: height * 0.05,
+    justifyContent: 'center',
+  },
+  form: {
+    width: '90%',
+    justifyContent: 'center',
   },
 });
 
-export default SignupScreen;
+export default RegistrationForm;
