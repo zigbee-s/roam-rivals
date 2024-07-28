@@ -4,7 +4,7 @@ import { getToken, saveToken, deleteToken, getRefreshToken, saveRefreshToken, de
 import { navigationRef } from './navigationRef';
 import uuid from 'react-native-uuid';
 
-const devURL = 'http://192.168.1.3:3000';
+// const devURL = 'http://192.168.1.3:3000';
 // const uatURL = 'http://192.168.1.8:3000';
 // const prodURL = 'https://roam-rivals.onrender.com';
 
@@ -12,7 +12,7 @@ const devURL = 'http://192.168.1.3:3000';
 
 import { API_BASE_URL } from '@env';
 
-let baseURL = devURL;
+let baseURL = API_BASE_URL;
 // baseURL = prodURL;
 console.log("Base URL: " + baseURL);
 
