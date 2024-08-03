@@ -4,6 +4,7 @@ const { Event, QuizEvent, PhotographyEvent } = require('../models/eventModel');
 const User = require('../models/userModel');
 const { getUploadGIFPresignedUrl, getPresignedUrl } = require('../utils/s3Utils');
 const { sendEventRegistrationEmail } = require('../utils/emailService');
+const { createOrder, verifyPayment, handlePaymentSuccess } = require('../services/paymentService');
 const logger = require('../logger');
 
 const REGISTRATION_XP = 10; // Constant XP for registration
@@ -186,6 +187,22 @@ async function registerEvent(req, res) {
   }
 }
 
+async function verifyPaymentHandler(req, res) {
+  const { razorpay_order_id, razorpay_payment_id, razorpay_signature, eventId, userId } = req.body;
+  try {
+    const isValid = await verifyPayment(razorpay_order_id, razorpay_payment_id, razorpay_signature);
+    if (isValid) {
+      await handlePaymentSuccess(razorpay_order_id, razorpay_payment_id, eventId, userId);
+      res.json({ success: true });
+    } else {
+      res.status(400).json({ success: false });
+    }
+  } catch (error) {
+    logger.error('Failed to verify payment', error);
+    res.status(500).json({ message: 'Failed to verify payment', error: error.message });
+  }
+}
+
 async function getEventStatus(req, res) {
   const { eventId } = req.params;
 
@@ -294,4 +311,4 @@ async function completeEvent(req, res) {
   res.status(200).json({ message: 'Event completed and XP awarded' });
 }
 
-module.exports = { createEvent, generateLogoGIFUploadUrl, getEvents, getEventById, updateEvent, deleteEvent, registerEvent, getEventStatus, checkUserRegistration, completeEvent };
+module.exports = { createEvent, generateLogoGIFUploadUrl, getEvents, getEventById, updateEvent, deleteEvent, registerEvent, verifyPaymentHandler, getEventStatus, checkUserRegistration, completeEvent };
