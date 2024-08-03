@@ -1,7 +1,7 @@
 /* File: backend/services/paymentService.js */
 const Razorpay = require('razorpay');
 const crypto = require('crypto');
-const config = require('../config');
+const config = require('../config/config');
 const Event = require('../models/eventModel');
 const Payment = require('../models/paymentModel');
 
