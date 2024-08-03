@@ -1,4 +1,5 @@
 // backend/models/userModel.js
+
 const mongoose = require('mongoose');
 const bcrypt = require('bcrypt');
 
@@ -11,6 +12,7 @@ const userSchema = new mongoose.Schema({
   roles: [{ type: String, enum: ['user', 'admin'], default: 'user' }],
   events: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Event' }],
   skills: { type: [String], default: [] }, // Add skills field
+  xp: { type: Number, default: 0 }, // Add XP field
 }, { timestamps: true });
 
 // Hash password before saving

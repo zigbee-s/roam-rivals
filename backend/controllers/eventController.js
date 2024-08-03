@@ -6,10 +6,12 @@ const { getUploadGIFPresignedUrl, getPresignedUrl } = require('../utils/s3Utils'
 const { sendEventRegistrationEmail } = require('../utils/emailService');
 const logger = require('../logger');
 
+const REGISTRATION_XP = 10; // Constant XP for registration
+
 async function createEvent(req, res) {
   const { 
     title, description, startingDate, eventEndDate, location, eventType, maxPhotos, 
-    themes, photoSubmissionDeadline, maxImagesPerUser, maxLikesPerUser, logoGIFKey, difficulty, entryFee, isSpecial, ...rest 
+    themes, photoSubmissionDeadline, maxImagesPerUser, maxLikesPerUser, logoGIFKey, difficulty, entryFee, isSpecial, totalXP, ...rest 
   } = req.body;
   const createdBy = req.user.userId;
 
@@ -22,7 +24,7 @@ async function createEvent(req, res) {
           return res.status(403).json({ message: 'Only admins can create quiz events' });
         }
         event = new QuizEvent({ 
-          title, description, startingDate, eventEndDate, location, createdBy, eventType, difficulty, entryFee, isSpecial, ...rest 
+          title, description, startingDate, eventEndDate, location, createdBy, eventType, difficulty, entryFee, isSpecial, totalXP, ...rest 
         });
         break;
       case 'photography':
@@ -32,12 +34,12 @@ async function createEvent(req, res) {
         }
         event = new PhotographyEvent({ 
           title, description, startingDate, eventEndDate, location, createdBy, eventType, maxPhotos, 
-          themes, photoSubmissionDeadline, maxImagesPerUser, maxLikesPerUser, difficulty, entryFee, isSpecial, ...rest 
+          themes, photoSubmissionDeadline, maxImagesPerUser, maxLikesPerUser, difficulty, entryFee, isSpecial, totalXP, ...rest 
         });
         break;
       default:
         event = new Event({ 
-          title, description, startingDate, eventEndDate, location, createdBy, eventType, difficulty, entryFee, isSpecial 
+          title, description, startingDate, eventEndDate, location, createdBy, eventType, difficulty, entryFee, isSpecial, totalXP 
         });
     }
 
@@ -168,6 +170,9 @@ async function registerEvent(req, res) {
     user.events.push(eventId);
     event.participants.push(userId);
 
+    // Award XP for registration
+    user.xp += REGISTRATION_XP;
+
     await user.save();
     await event.save();
 
@@ -228,4 +233,65 @@ async function checkUserRegistration(req, res) {
   }
 }
 
-module.exports = { createEvent, generateLogoGIFUploadUrl, getEvents, getEventById, updateEvent, deleteEvent, registerEvent, getEventStatus, checkUserRegistration };
+// Function to award XP based on ranks
+async function awardXpForEvent(eventId) {
+  try {
+    const event = await Event.findById(eventId).populate('participants');
+    if (!event) {
+      logger.warn(`Event not found: ${eventId}`);
+      return;
+    }
+
+    const totalXP = event.totalXP;
+    const participants = event.participants.sort((a, b) => a.rank - b.rank); // Assuming participants have a rank field
+
+    // Define XP allocation for top positions
+    const topPositionXPs = [totalXP * 0.3, totalXP * 0.2, totalXP * 0.1]; // 1st: 30%, 2nd: 20%, 3rd: 10%
+    const winnerXP = topPositionXPs.reduce((acc, xp) => acc + xp, 0);
+    const remainingXP = totalXP - winnerXP;
+    const participationXP = remainingXP * 0.1; // 10% for participation
+    const rankBasedXP = remainingXP - participationXP;
+
+    // Award XP to top 3 winners
+    for (let i = 0; i < Math.min(3, participants.length); i++) {
+      participants[i].xp += topPositionXPs[i];
+      await participants[i].save();
+    }
+
+    // Remaining winners (top 10%) after top 3 get equal share of remaining winnerXP
+    const remainingWinners = participants.slice(3, Math.ceil(participants.length * 0.1));
+    const remainingWinnerXP = winnerXP - topPositionXPs.reduce((acc, xp) => acc + xp, 0);
+
+    for (let i = 0; i < remainingWinners.length; i++) {
+      remainingWinners[i].xp += remainingWinnerXP / remainingWinners.length;
+      await remainingWinners[i].save();
+    }
+
+    // Award participation XP to all participants
+    for (let participant of participants) {
+      participant.xp += participationXP / participants.length;
+      await participant.save();
+    }
+
+    // Award rank-based XP to remaining participants based on rank
+    const remainingParticipants = participants.slice(Math.ceil(participants.length * 0.1));
+    const totalRanks = remainingParticipants.reduce((acc, p) => acc + p.rank, 0);
+
+    for (let participant of remainingParticipants) {
+      const participantXP = (rankBasedXP * participant.rank) / totalRanks;
+      participant.xp += participantXP;
+      await participant.save();
+    }
+
+    logger.info(`XP awarded for event: ${eventId}`);
+  } catch (error) {
+    logger.error('Failed to award XP for event', error);
+  }
+}
+
+async function completeEvent(req, res) {
+  await awardXpForEvent(req.params.eventId);
+  res.status(200).json({ message: 'Event completed and XP awarded' });
+}
+
+module.exports = { createEvent, generateLogoGIFUploadUrl, getEvents, getEventById, updateEvent, deleteEvent, registerEvent, getEventStatus, checkUserRegistration, completeEvent };

@@ -16,7 +16,8 @@ const eventSchema = new Schema({
   winners: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
   difficulty: { type: Number, required: true, min: 1, max: 5 },
   entryFee: { type: Number, required: true },
-  isSpecial: { type: Boolean, default: false }
+  isSpecial: { type: Boolean, default: false },
+  totalXP: { type: Number, required: true }, // Add total XP field
 }, { discriminatorKey: 'eventType' });
 
 eventSchema.methods.isOpened = function () {
@@ -54,11 +55,7 @@ const photographyEventSchema = new Schema({
   difficulty: { type: Number, required: true, min: 1, max: 5 },
 });
 
-// photographyEventSchema.methods.isSubmissionStarted = function () {
-//   const now = new Date();
-//   return now >= this.photoSubmissionDeadline;
-// };
-
+// New helper methods for additional criteria
 photographyEventSchema.methods.isUploadAllowed = async function (userId) {
   const photos = await mongoose.model('Photo').countDocuments({ uploadedBy: userId, event: this._id });
   return photos < this.maxImagesPerUser;
@@ -69,7 +66,6 @@ photographyEventSchema.methods.isLikeAllowed = async function (userId) {
   return likes < this.maxLikesPerUser;
 };
 
-// New helper methods for additional criteria
 photographyEventSchema.methods.isUploadPeriod = function () {
   const now = new Date();
   return now >= this.startingDate && now <= this.photoSubmissionDeadline;

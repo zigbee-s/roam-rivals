@@ -1,4 +1,5 @@
 // src/screens/ProfileScreen.js
+
 import React, { useContext, useCallback } from 'react';
 import { View, Text, Button, StyleSheet, ScrollView, ActivityIndicator } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
@@ -46,6 +47,8 @@ const ProfileScreen = ({ navigation }) => {
         <Text style={styles.info}>{user.email}</Text>
         <Text style={styles.label}>Age:</Text>
         <Text style={styles.info}>{user.age}</Text>
+        <Text style={styles.label}>XP:</Text>
+        <Text style={styles.info}>{user.xp}</Text>
         <Text style={styles.label}>Roles:</Text>
         {user.roles.map((role, index) => (
           <Text key={index} style={styles.info}>{role}</Text>
@@ -105,3 +108,4 @@ const styles = StyleSheet.create({
 });
 
 export default ProfileScreen;
+  

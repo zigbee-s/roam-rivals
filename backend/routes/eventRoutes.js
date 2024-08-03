@@ -1,6 +1,7 @@
 // backend/routes/eventRoutes.js
+
 const express = require('express');
-const { createEvent, generateLogoGIFUploadUrl, getEvents, getEventById, updateEvent, deleteEvent, registerEvent, getEventStatus, checkUserRegistration } = require('../controllers/eventController');
+const { createEvent, generateLogoGIFUploadUrl, getEvents, getEventById, updateEvent, deleteEvent, registerEvent, getEventStatus, checkUserRegistration, completeEvent } = require('../controllers/eventController');
 const { authMiddleware } = require('../middlewares/authMiddleware');
 const roleMiddleware = require('../middlewares/roleMiddleware');
 const createRateLimiter = require('../middlewares/rateLimiter');
@@ -18,5 +19,6 @@ router.put('/:eventId', authMiddleware, roleMiddleware(['admin']), eventLimiter,
 router.delete('/:eventId', authMiddleware, roleMiddleware(['admin']), eventLimiter, deleteEvent);
 router.get('/:eventId/status', authMiddleware, getEventStatus);
 router.get('/check-registration/:eventId', authMiddleware, checkUserRegistration);
+router.post('/:eventId/complete', authMiddleware, roleMiddleware(['admin']), completeEvent);
 
 module.exports = router;

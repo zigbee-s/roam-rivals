@@ -21,6 +21,7 @@ const validationSchema = yup.object().shape({
   difficulty: yup.number().required('Difficulty is required').min(1).max(5).integer(),
   entryFee: yup.number().required('Entry fee is required').positive(),
   isSpecial: yup.boolean().required('Special status is required'),
+  totalXP: yup.number().required('Total XP is required').positive().integer(),
   numberOfQuestions: yup.number()
     .nullable()
     .when('eventType', {
@@ -199,6 +200,7 @@ const CreateEventScreen = ({ navigation }) => {
           difficulty: '3',  // Sample value
           entryFee: '0', // Sample value
           isSpecial: false, // Sample value
+          totalXP: '1000', // Sample value
           numberOfQuestions: '',
           timeLimit: '',
           questions: '',
@@ -297,6 +299,15 @@ const CreateEventScreen = ({ navigation }) => {
               keyboardType="numeric"
             />
             {touched.entryFee && errors.entryFee && <Text style={styles.errorText}>{errors.entryFee}</Text>}
+            <TextInput
+              style={styles.input}
+              placeholder="Total XP"
+              onChangeText={handleChange('totalXP')}
+              onBlur={handleBlur('totalXP')}
+              value={values.totalXP}
+              keyboardType="numeric"
+            />
+            {touched.totalXP && errors.totalXP && <Text style={styles.errorText}>{errors.totalXP}</Text>}
             <View style={styles.switchContainer}>
               <Text>Special Event</Text>
               <Switch
