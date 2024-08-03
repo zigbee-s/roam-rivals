@@ -17,7 +17,12 @@ const eventSchema = new Schema({
   difficulty: { type: Number, required: true, min: 1, max: 5 },
   entryFee: { type: Number, required: true },
   isSpecial: { type: Boolean, default: false },
-  totalXP: { type: Number, required: true }, // Add total XP field
+  totalXP: { type: Number, required: true },
+  registrations: [{
+    user: { type: Schema.Types.ObjectId, ref: 'User', required: true },
+    paymentStatus: { type: String, enum: ['pending', 'completed', 'failed'], default: 'pending' },
+    registrationDate: { type: Date, default: Date.now },
+  }]
 }, { discriminatorKey: 'eventType' });
 
 eventSchema.methods.isOpened = function () {
@@ -55,7 +60,6 @@ const photographyEventSchema = new Schema({
   difficulty: { type: Number, required: true, min: 1, max: 5 },
 });
 
-// New helper methods for additional criteria
 photographyEventSchema.methods.isUploadAllowed = async function (userId) {
   const photos = await mongoose.model('Photo').countDocuments({ uploadedBy: userId, event: this._id });
   return photos < this.maxImagesPerUser;
