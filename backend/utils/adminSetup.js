@@ -9,7 +9,7 @@ const createAdminUser = async () => {
   const adminPassword = 'admin123'; // Ensure this is hashed before saving
   const adminRoles = ['admin', 'user'];
   const adminName = 'Admin User';
-  const adminAge = 30;
+  const adminAge = 23;
 
   const existingAdmin = await User.findOne({ email: adminEmail });
 

@@ -1,4 +1,5 @@
-/* File: backend/services/paymentService.js */
+// services/paymentService.js
+
 const Razorpay = require('razorpay');
 const crypto = require('crypto');
 const config = require('../config/config');
@@ -23,7 +24,7 @@ async function createOrder(eventId, userId, amount, currency = 'INR') {
   }
 }
 
-async function verifyPayment(orderId, paymentId, signature) {
+function verifyPayment(orderId, paymentId, signature) {
   const hmac = crypto.createHmac('sha256', config.razorpayKeySecret);
   hmac.update(orderId + "|" + paymentId);
   const generated_signature = hmac.digest('hex');

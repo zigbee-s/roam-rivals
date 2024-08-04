@@ -7,10 +7,20 @@ import uuid from 'react-native-uuid';
 const devURL = 'http://localhost:3000';
 const uatURL = 'http://192.168.1.7:3000';
 const prodURL = 'https://roam-rivals.onrender.com';
+const ngrokURL = 'https://964e-223-233-87-17.ngrok-free.app'; // Update this to your current ngrok URL
 
-let baseURL = process.env.NODE_ENV === 'production' ? uatURL : devURL;
+// Determine the base URL based on environment
+let baseURL;
 
-baseURL = devURL;
+if (process.env.NODE_ENV === 'production') {
+  baseURL = prodURL;
+} else if (process.env.NODE_ENV === 'uat') {
+  baseURL = uatURL;
+} else {
+  baseURL = ngrokURL;
+}
+
+baseURL = prodURL
 console.log("Base URL: " + baseURL);
 
 const apiClient = axios.create({
@@ -79,21 +89,12 @@ apiClient.interceptors.response.use(
         navigationRef.navigate('Login');
       }
 
-
       if (error.response.status === 404 && error.response.data.message === 'User not found') {
         console.error("User not found");
         await deleteToken();
         await deleteRefreshToken();
         navigationRef.navigate('Login');
       }
-
-      // Other errors
-      // if (error.response.status === 403 || error.response.status === 400) {
-      //   console.error("Error response:", error.response.data.message);
-      //   await deleteToken();
-      //   await deleteRefreshToken();
-      //   navigationRef.navigate('Login');
-      // }
     }
 
     return Promise.reject(error);

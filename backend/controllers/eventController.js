@@ -146,20 +146,20 @@ async function deleteEvent(req, res) {
   }
 }
 
-async function registerEvent(req, res) {
+async function createOrderForEvent(req, res) {
   const { eventId } = req.body;
   const userId = req.user.userId;
 
   try {
     const event = await Event.findById(eventId);
     if (!event) {
-      logger.warn(`Event not found for registration: ${eventId}`);
+      logger.warn(`Event not found for order creation: ${eventId}`);
       return res.status(404).json({ message: 'Event not found' });
     }
 
     const user = await User.findById(userId);
     if (!user) {
-      logger.warn(`User not found for registration: ${userId}`);
+      logger.warn(`User not found for order creation: ${userId}`);
       return res.status(404).json({ message: 'User not found' });
     }
 
@@ -168,38 +168,78 @@ async function registerEvent(req, res) {
       return res.status(200).json({ message: 'You are already registered for this event' });
     }
 
-    user.events.push(eventId);
-    event.participants.push(userId);
+    // Create Razorpay order
+    const amount = event.entryFee * 100; // amount in paise
+    const order = await createOrder(eventId, userId, amount);
 
-    // Award XP for registration
-    user.xp += REGISTRATION_XP;
-
-    await user.save();
-    await event.save();
-
-    await sendEventRegistrationEmail(user.email, event.title);
-
-    logger.info(`User registered for event: ${eventId}`);
-    res.status(200).json({ message: 'Registered for event successfully', event });
+    res.json(order);
   } catch (error) {
-    logger.error('Failed to register for event', error);
-    res.status(500).json({ message: 'Failed to register for event', error: error.message });
+    logger.error('Failed to create order for event', error);
+    res.status(500).json({ message: 'Failed to create order for event', error: error.message });
   }
 }
 
-async function verifyPaymentHandler(req, res) {
-  const { razorpay_order_id, razorpay_payment_id, razorpay_signature, eventId, userId } = req.body;
+async function handleRazorpayWebhook(req, res) {
+  const secret = process.env.RAZORPAY_WEBHOOK_SECRET;
+
+  const shasum = crypto.createHmac('sha256', secret);
+  shasum.update(JSON.stringify(req.body));
+  const digest = shasum.digest('hex');
+
+  if (digest === req.headers['x-razorpay-signature']) {
+    // Handle webhook event
+    const event = req.body.event;
+    const payload = req.body.payload;
+
+    switch (event) {
+      case 'payment.authorized':
+        // Handle authorized payment
+        break;
+      case 'payment.failed':
+        // Handle failed payment
+        const { order_id, payment_id } = payload.payment.entity;
+        const paymentRecord = await Payment.findOne({ orderId: order_id });
+        if (paymentRecord) {
+          paymentRecord.status = 'failed';
+          await paymentRecord.save();
+        }
+        break;
+      // Handle other events as needed
+      default:
+        break;
+    }
+
+    res.json({ status: 'ok' });
+  } else {
+    res.status(400).send('Invalid signature');
+  }
+}
+
+async function registerEvent(req, res) {
+  const { razorpay_order_id, razorpay_payment_id, razorpay_signature, eventId } = req.body;
+  const userId = req.user.userId;
+
   try {
-    const isValid = await verifyPayment(razorpay_order_id, razorpay_payment_id, razorpay_signature);
+    const isValid = verifyPayment(razorpay_order_id, razorpay_payment_id, razorpay_signature);
     if (isValid) {
       await handlePaymentSuccess(razorpay_order_id, razorpay_payment_id, eventId, userId);
+
+      // Update event and user registrations after payment success
+      const event = await Event.findById(eventId);
+      const user = await User.findById(userId);
+      user.events.push(eventId);
+      event.participants.push(userId);
+      user.xp += REGISTRATION_XP;
+      await user.save();
+      await event.save();
+
       res.json({ success: true });
     } else {
-      res.status(400).json({ success: false });
+      res.status(400).json({ success: false, message: 'Payment verification failed' });
     }
   } catch (error) {
-    logger.error('Failed to verify payment', error);
-    res.status(500).json({ message: 'Failed to verify payment', error: error.message });
+    logger.error('Failed to register for event', error);
+    res.status(500).json({ message: 'Failed to register for event', error: error.message });
   }
 }
 
@@ -311,4 +351,17 @@ async function completeEvent(req, res) {
   res.status(200).json({ message: 'Event completed and XP awarded' });
 }
 
-module.exports = { createEvent, generateLogoGIFUploadUrl, getEvents, getEventById, updateEvent, deleteEvent, registerEvent, verifyPaymentHandler, getEventStatus, checkUserRegistration, completeEvent };
+module.exports = { 
+  createEvent, 
+  generateLogoGIFUploadUrl, 
+  getEvents, 
+  getEventById, 
+  updateEvent, 
+  deleteEvent, 
+  createOrderForEvent, 
+  registerEvent, 
+  getEventStatus, 
+  checkUserRegistration, 
+  completeEvent,
+  handleRazorpayWebhook 
+};
