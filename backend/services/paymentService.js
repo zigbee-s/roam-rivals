@@ -1,5 +1,3 @@
-// services/paymentService.js
-
 const Razorpay = require('razorpay');
 const crypto = require('crypto');
 const config = require('../config/config');
@@ -13,13 +11,17 @@ const razorpay = new Razorpay({
 
 async function createOrder(eventId, userId, amount, currency = 'INR') {
   try {
+    // Create a short receipt string using a hash
+    const receipt = crypto.createHash('sha256').update(`${eventId}_${userId}`).digest('hex').substring(0, 40);
+    
     const order = await razorpay.orders.create({
       amount,
       currency,
-      receipt: `${eventId}_${userId}`,
+      receipt,
     });
     return order;
   } catch (error) {
+    console.log(error);
     throw new Error('Error creating order with Razorpay');
   }
 }

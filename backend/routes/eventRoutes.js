@@ -26,8 +26,8 @@ const eventLimiter = createRateLimiter(60 * 1000, 10, "Too many requests from th
 router.post('/generate-upload-url/gif', authMiddleware, generateLogoGIFUploadUrl);
 router.post('/', authMiddleware, roleMiddleware(['admin']), eventLimiter, createEvent);
 router.get('/', authMiddleware, getEvents);
-router.post('/register', authMiddleware, createOrderForEvent);
-router.post('/register/verify', authMiddleware, registerEvent);
+router.post('/order', authMiddleware, createOrderForEvent);
+router.post('/register', authMiddleware, registerEvent);
 router.post('/razorpay-webhook', handleRazorpayWebhook);
 router.get('/:eventId', getEventById);
 router.put('/:eventId', authMiddleware, roleMiddleware(['admin']), eventLimiter, updateEvent);

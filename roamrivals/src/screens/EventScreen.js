@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useContext, useCallback } from 'react';
-import { View, Text, FlatList, StyleSheet, ActivityIndicator, Button, Alert, Image, Modal } from 'react-native';
+import { View, Text, FlatList, StyleSheet, ActivityIndicator, Button, Alert, Image } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
-import { WebView } from 'react-native-webview';
 import apiClient from '../api/apiClient';
 import { ErrorContext } from '../context/ErrorContext';
 import { UserContext } from '../context/UserContext';
@@ -17,8 +16,6 @@ const EventScreen = ({ navigation }) => {
   const [remainingLikes, setRemainingLikes] = useState(0);
   const [maxLikes, setMaxLikes] = useState(0);
   const [eventStatuses, setEventStatuses] = useState({});
-  const [paymentModalVisible, setPaymentModalVisible] = useState(false);
-  const [paymentUrl, setPaymentUrl] = useState('');
 
   const fetchEvents = async () => {
     setLoading(true);
@@ -96,12 +93,9 @@ const EventScreen = ({ navigation }) => {
     setLoading(true);
     setError(null);
     try {
-      const response = await apiClient.post('/events/register', { eventId });
+      const response = await apiClient.post('/events/order', { eventId });
       if (response.data.id) {
-        const { id, amount, currency } = response.data;
-        const paymentUrl = `https://api.razorpay.com/v1/checkout/embedded?order_id=${id}&amount=${amount}&currency=${currency}&key_id=rzp_test_KRmFIbLwweXdGW`;
-        setPaymentUrl(paymentUrl);
-        setPaymentModalVisible(true);
+        initiateRazorpayPayment(response.data);
       } else {
         Alert.alert('Error', 'Failed to create order. Please try again.');
       }
@@ -118,32 +112,56 @@ const EventScreen = ({ navigation }) => {
     }
   };
 
-  const handlePaymentVerification = async (data) => {
-    setPaymentModalVisible(false);
-    const { razorpay_order_id, razorpay_payment_id, razorpay_signature } = data;
-
-    const paymentData = {
-      razorpay_order_id,
-      razorpay_payment_id,
-      razorpay_signature,
-      eventId: selectedEvent._id,
+  const initiateRazorpayPayment = (orderData) => {
+    const options = {
+      key: 'rzp_test_KRmFIbLwweXdGW', // Replace with your Razorpay Key ID
+      amount: orderData.amount, // Amount in paise
+      currency: 'INR',
+      name: 'Event Registration',
+      description: `Register for event: ${orderData.eventTitle}`,
+      // image: 'https://example.com/logo.png', // Optional: replace with your logo URL
+      order_id: orderData.id,
+      handler: async function (response) {
+        const paymentData = {
+          razorpay_order_id: response.razorpay_order_id,
+          razorpay_payment_id: response.razorpay_payment_id,
+          razorpay_signature: response.razorpay_signature,
+          eventId: orderData.eventId,
+        };
+  
+        // Verify payment after Razorpay payment is completed
+        try {
+          const verifyResponse = await apiClient.post('/events/register', paymentData);
+          const verifyResult = verifyResponse.data;
+  
+          if (verifyResult.success) {
+            Alert.alert('Success', 'Payment successful and verified!');
+            fetchEvents();
+          } else {
+            Alert.alert('Error', 'Payment verification failed. Please contact support.');
+          }
+        } catch (error) {
+          console.error('Payment verification error:', error);
+          Alert.alert('Error', 'Payment verification failed. Please contact support.');
+        }
+      },
+      prefill: {
+        name: user.name,
+        email: user.email,
+        contact: user.contact,
+      },
+      notes: {
+        address: 'User Address',
+      },
+      theme: {
+        color: '#F37254',
+      },
     };
-
-    try {
-      const verifyResponse = await apiClient.post('/events/register/verify', paymentData);
-      const verifyResult = verifyResponse.data;
-
-      if (verifyResult.success) {
-        Alert.alert('Success', 'Payment successful and verified!');
-        fetchEvents();
-      } else {
-        Alert.alert('Error', 'Payment verification failed. Please contact support.');
-      }
-    } catch (error) {
-      console.error('Payment verification error:', error);
-      Alert.alert('Error', 'Payment verification failed. Please contact support.');
-    }
+  
+    const rzp = new window.Razorpay(options);
+    rzp.open();
   };
+  
 
   const handleEventPress = async (event) => {
     setSelectedEvent(event);
@@ -174,11 +192,6 @@ const EventScreen = ({ navigation }) => {
     } finally {
       setLoading(false);
     }
-  };
-
-  const onMessage = (event) => {
-    const data = JSON.parse(event.nativeEvent.data);
-    handlePaymentVerification(data);
   };
 
   return (
@@ -260,20 +273,6 @@ const EventScreen = ({ navigation }) => {
           )}
         </>
       )}
-      <Modal visible={paymentModalVisible} animationType="slide">
-        <WebView
-          source={{ uri: paymentUrl }}
-          onMessage={onMessage}
-          injectedJavaScript={`window.onload = function() { 
-            window.postMessage(JSON.stringify({ 
-              razorpay_order_id: Razorpay.razorpay_order_id, 
-              razorpay_payment_id: Razorpay.razorpay_payment_id, 
-              razorpay_signature: Razorpay.razorpay_signature 
-            })); 
-          };`}
-        />
-        <Button title="Close" onPress={() => setPaymentModalVisible(false)} />
-      </Modal>
     </View>
   );
 };

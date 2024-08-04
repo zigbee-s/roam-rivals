@@ -6,6 +6,8 @@ const { getUploadGIFPresignedUrl, getPresignedUrl } = require('../utils/s3Utils'
 const { sendEventRegistrationEmail } = require('../utils/emailService');
 const { createOrder, verifyPayment, handlePaymentSuccess } = require('../services/paymentService');
 const logger = require('../logger');
+const crypto = require('crypto');
+const Payment = require('../models/paymentModel');
 
 const REGISTRATION_XP = 10; // Constant XP for registration
 
@@ -168,8 +170,11 @@ async function createOrderForEvent(req, res) {
       return res.status(200).json({ message: 'You are already registered for this event' });
     }
 
+    console.log("here")
     // Create Razorpay order
     const amount = event.entryFee * 100; // amount in paise
+    console.log(amount)
+
     const order = await createOrder(eventId, userId, amount);
 
     res.json(order);
@@ -220,7 +225,7 @@ async function registerEvent(req, res) {
   const userId = req.user.userId;
 
   try {
-    const isValid = verifyPayment(razorpay_order_id, razorpay_payment_id, razorpay_signature);
+    const isValid = await verifyPayment(razorpay_order_id, razorpay_payment_id, razorpay_signature);
     if (isValid) {
       await handlePaymentSuccess(razorpay_order_id, razorpay_payment_id, eventId, userId);
 

@@ -20,12 +20,12 @@ if (process.env.NODE_ENV === 'production') {
   baseURL = ngrokURL;
 }
 
-baseURL = prodURL
+baseURL = devURL
 console.log("Base URL: " + baseURL);
 
 const apiClient = axios.create({
   baseURL,
-  timeout: 20000, // Set a 20-second timeout for requests
+  timeout: 200000, // Set a 20-second timeout for requests
 });
 
 apiClient.interceptors.request.use(async (config) => {
