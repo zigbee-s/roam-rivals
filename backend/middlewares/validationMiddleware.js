@@ -2,10 +2,12 @@
 
 const { body, validationResult } = require('express-validator');
 
+console.log(body('amount').name)
+
 // Validation for creating an order
 const validateCreateOrder = [
   body('eventId').isString().notEmpty().withMessage('Event ID is required'),
-  body('amount').isNumeric().withMessage('Amount should be a number'),
+  body('amount').isNumeric().withMessage('Amount should be a number'), // Ensure amount is a number
   (req, res, next) => {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {

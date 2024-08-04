@@ -1,16 +1,16 @@
 const { createOrder, verifyPayment, handlePaymentSuccess } = require('../services/paymentService');
 const logger = require('../logger');
 const Payment = require('../models/paymentModel');
-const Event = require('../models/eventModel');
+const {Event} = require('../models/eventModel');
 const User = require('../models/userModel');
 const crypto = require('crypto');
 
 const REGISTRATION_XP = 10; // Constant XP for registration
 
 async function createOrderForEvent(req, res) {
-  const { eventId } = req.body;
+  const { eventId, amount } = req.body; // Ensure amount is destructured from request body
   const userId = req.user.userId;
-
+  console.log(eventId, amount)
   try {
     const event = await Event.findById(eventId);
     if (!event) {
@@ -29,7 +29,6 @@ async function createOrderForEvent(req, res) {
       return res.status(200).json({ message: 'You are already registered for this event' });
     }
 
-    const amount = event.entryFee * 100; // amount in paise
     const order = await createOrder(eventId, userId, amount);
     res.json(order);
   } catch (error) {
@@ -71,6 +70,7 @@ async function handleRazorpayWebhook(req, res) {
 }
 
 async function registerEvent(req, res) {
+  console.log("I am here")
   const { razorpay_order_id, razorpay_payment_id, razorpay_signature, eventId } = req.body;
   const userId = req.user.userId;
 

@@ -89,14 +89,16 @@ const EventScreen = ({ navigation }) => {
     }, [])
   );
 
-  const handleRegister = async (eventId) => {
+  const handleRegister = async (eventId, amount) => {
+    console.log('Registering for event:', eventId, 'with amount:', amount, 'Type:', typeof amount); // Debug log
     setLoading(true);
     setError(null);
     try {
-      const response = await apiClient.post('/payments/create-order', { eventId });
+      const response = await apiClient.post('/payments/create-order', { eventId, amount });
       if (response.data.id) {
         initiateRazorpayPayment(response.data);
       } else {
+        console.log("errorrrrrrrrrrrrrrrr")
         Alert.alert('Error', 'Failed to create order. Please try again.');
       }
     } catch (error) {
@@ -113,6 +115,7 @@ const EventScreen = ({ navigation }) => {
   };
 
   const initiateRazorpayPayment = (orderData) => {
+    console.log(orderData)
     const options = {
       key: 'rzp_test_KRmFIbLwweXdGW', // Replace with your Razorpay Key ID
       amount: orderData.amount, // Amount in paise
@@ -160,7 +163,6 @@ const EventScreen = ({ navigation }) => {
     const rzp = new window.Razorpay(options);
     rzp.open();
   };
-  
 
   const handleEventPress = async (event) => {
     setSelectedEvent(event);
@@ -192,6 +194,19 @@ const EventScreen = ({ navigation }) => {
       setLoading(false);
     }
   };
+
+  const renderItem = ({ item }) => (
+    <View style={styles.eventItem}>
+      {item.logoPresignedUrl && (
+        <Image source={{ uri: item.logoPresignedUrl }} style={styles.logo} />
+      )}
+      <Text style={styles.title}>{item.title}</Text>
+      <Text>{item.description}</Text>
+      <Text>Status: {eventStatuses[item._id] ? JSON.stringify(eventStatuses[item._id]) : 'Loading...'}</Text>
+      <Button title="Register" onPress={() => handleRegister(item._id, item.entryFee * 100)} /> {/* Ensure amount is passed here */}
+      <Button title="View Details" onPress={() => handleEventPress(item)} />
+    </View>
+  );
 
   return (
     <View style={styles.container}>
@@ -256,18 +271,7 @@ const EventScreen = ({ navigation }) => {
             <FlatList
               data={events}
               keyExtractor={(item) => item._id}
-              renderItem={({ item }) => (
-                <View style={styles.eventItem}>
-                  {item.logoPresignedUrl && (
-                    <Image source={{ uri: item.logoPresignedUrl }} style={styles.logo} />
-                  )}
-                  <Text style={styles.title}>{item.title}</Text>
-                  <Text>{item.description}</Text>
-                  <Text>Status: {eventStatuses[item._id] ? JSON.stringify(eventStatuses[item._id]) : 'Loading...'}</Text>
-                  <Button title="Register" onPress={() => handleRegister(item._id)} />
-                  <Button title="View Details" onPress={() => handleEventPress(item)} />
-                </View>
-              )}
+              renderItem={renderItem} // Use renderItem function
             />
           )}
         </>

@@ -15,7 +15,9 @@ const paymentLimiter = rateLimit({
 });
 
 router.post('/create-order', paymentLimiter, authMiddleware, validateCreateOrder, createOrderForEvent);
-router.post('/webhook', paymentLimiter, validateWebhook, handleRazorpayWebhook);
-router.post('/register', paymentLimiter, authMiddleware, validateRegisterEvent, registerEvent);
+router.post('/webhook', paymentLimiter, handleRazorpayWebhook);
+router.post('/register', paymentLimiter, authMiddleware, registerEvent);
+// router.post('/webhook', paymentLimiter, validateWebhook, handleRazorpayWebhook);
+// router.post('/register', paymentLimiter, authMiddleware, validateRegisterEvent, registerEvent);
 
 module.exports = router;
