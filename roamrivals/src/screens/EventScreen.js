@@ -93,7 +93,7 @@ const EventScreen = ({ navigation }) => {
     setLoading(true);
     setError(null);
     try {
-      const response = await apiClient.post('/events/order', { eventId });
+      const response = await apiClient.post('/payments/create-order', { eventId });
       if (response.data.id) {
         initiateRazorpayPayment(response.data);
       } else {
@@ -119,7 +119,6 @@ const EventScreen = ({ navigation }) => {
       currency: 'INR',
       name: 'Event Registration',
       description: `Register for event: ${orderData.eventTitle}`,
-      // image: 'https://example.com/logo.png', // Optional: replace with your logo URL
       order_id: orderData.id,
       handler: async function (response) {
         const paymentData = {
@@ -131,7 +130,7 @@ const EventScreen = ({ navigation }) => {
   
         // Verify payment after Razorpay payment is completed
         try {
-          const verifyResponse = await apiClient.post('/events/register', paymentData);
+          const verifyResponse = await apiClient.post('/payments/register', paymentData);
           const verifyResult = verifyResponse.data;
   
           if (verifyResult.success) {

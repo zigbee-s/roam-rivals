@@ -5,6 +5,7 @@ const connectDB = require('./db/db');
 const authRoutes = require('./routes/authRoutes');
 const userRoutes = require('./routes/userRoutes');
 const eventRoutes = require('./routes/eventRoutes');
+const paymentRoutes = require('./routes/paymentRoutes'); // Add payment routes
 const photoRoutes = require('./routes/photoRoutes');
 const leaderboardRoutes = require('./routes/leaderboardRoutes');
 const rateLimit = require('express-rate-limit');
@@ -48,6 +49,7 @@ app.use(limiter);
 app.use('/auth', authRoutes);
 app.use('/user', userRoutes);
 app.use('/events', eventRoutes);
+app.use('/payments', paymentRoutes); // Use payment routes
 app.use('/photos', photoRoutes);
 app.use('/leaderboard', leaderboardRoutes);
 

@@ -8,12 +8,9 @@ const {
   getEventById, 
   updateEvent, 
   deleteEvent, 
-  createOrderForEvent, 
-  registerEvent, 
   getEventStatus, 
   checkUserRegistration, 
-  completeEvent, 
-  handleRazorpayWebhook 
+  completeEvent 
 } = require('../controllers/eventController');
 const { authMiddleware } = require('../middlewares/authMiddleware');
 const roleMiddleware = require('../middlewares/roleMiddleware');
@@ -26,9 +23,6 @@ const eventLimiter = createRateLimiter(60 * 1000, 10, "Too many requests from th
 router.post('/generate-upload-url/gif', authMiddleware, generateLogoGIFUploadUrl);
 router.post('/', authMiddleware, roleMiddleware(['admin']), eventLimiter, createEvent);
 router.get('/', authMiddleware, getEvents);
-router.post('/order', authMiddleware, createOrderForEvent);
-router.post('/register', authMiddleware, registerEvent);
-router.post('/razorpay-webhook', handleRazorpayWebhook);
 router.get('/:eventId', getEventById);
 router.put('/:eventId', authMiddleware, roleMiddleware(['admin']), eventLimiter, updateEvent);
 router.delete('/:eventId', authMiddleware, roleMiddleware(['admin']), eventLimiter, deleteEvent);
